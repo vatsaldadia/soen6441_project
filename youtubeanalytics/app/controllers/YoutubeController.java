@@ -9,16 +9,17 @@ import play.mvc.*;
 public class YoutubeController extends Controller {
 
     private final WSClient ws;
-    private static final String YOUTUBE_KEY =
+    private static final String YOUTUBE_API_KEY =
         "AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
     private static final String YOUTUBE_URL =
         "https://www.googleapis.com/youtube/v3/search";
 
+    @Inject
     public YoutubeController(WSClient ws) {
         this.ws = ws;
     }
 
-    public CompleteionStage<Result> searchVideos(String query) {
+    public CompletionStage<Result> searchVideos(String query) {
         return ws
             .url(YOUTUBE_URL)
             .addQueryParameter("part", "snippet")

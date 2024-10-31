@@ -1,4 +1,5 @@
-public class YouTubeVideo {
+public class YoutubeVideo {
+
     private String videoId;
     private String title;
     private String description;
@@ -8,9 +9,15 @@ public class YouTubeVideo {
     private Long viewCount;
 
     // Constructor
-    public YouTubeVideo(String videoId, String title, String description,
-                       String thumbnailUrl, String channelTitle,
-                       String publishedAt, Long viewCount) {
+    public YoutubeVideo(
+        String videoId,
+        String title,
+        String description,
+        String thumbnailUrl,
+        String channelTitle,
+        String publishedAt,
+        Long viewCount
+    ) {
         this.videoId = videoId;
         this.title = title;
         this.description = description;
