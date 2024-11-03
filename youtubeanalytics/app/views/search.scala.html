@@ -1,56 +1,56 @@
 <!doctype html>
 <html>
-    <head>
-        <title>YouTube Search</title>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <style>
-            .video-item {
-                margin: 20px;
-                padding: 10px;
-                border: 1px solid #ddd;
-            }
-            .thumbnail {
-                width: 120px;
-                height: 90px;
-            }
-        </style>
-    </head>
-    <body>
-        <div>
-            <input
-                type="text"
-                id="searchQuery"
-                placeholder="Enter search term"
-            />
-            <button onclick="searchVideos()">Search</button>
-        </div>
-        <div id="results"></div>
+	<head>
+		<title>YouTube Search</title>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<style>
+			.video-item {
+				margin: 20px;
+				padding: 10px;
+				border: 1px solid #ddd;
+			}
+			.thumbnail {
+				width: 120px;
+				height: 90px;
+			}
+		</style>
+	</head>
+	<body>
+		<div>
+			<input
+				type="text"
+				id="searchQuery"
+				placeholder="Enter search term"
+			/>
+			<button onclick="searchVideos()">Search</button>
+		</div>
+		<div id="results"></div>
 
-        <script>
-            function searchVideos() {
-                const query = $("#searchQuery").val();
-                $("#results").empty();
+		<script>
+			function searchVideos() {
+				const query = $("#searchQuery").val();
+				$("#results").empty();
 
-                $.get(
-                    `/api/youtube/search?query=${encodeURIComponent(query)}`,
-                    function (data) {
-                        data.items.forEach((item) => {
-                            const videoId = item.id.videoId;
-                            const snippet = item.snippet;
-                            const html = `
+				$.get(
+					`/api/youtube/search?query=${encodeURIComponent(query)}`,
+					function (data) {
+						data.items.forEach((item) => {
+							const videoId = item.id.videoId;
+							const snippet = item.snippet;
+							const html = `
                         <div class="video-item">
-                            <h3>${snippet.title}</h3>
+                            <h3>${snippet.title} : ${item.sentiment}</h3>
                             <img class="thumbnail" src="${snippet.thumbnails.default.url}">
                             <p>${snippet.description}</p>
                             <p>Channel: ${snippet.channelTitle}</p>
                             <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">Watch Video</a>
                         </div>
                     `;
-                            $("#results").append(html);
-                        });
-                    },
-                );
-            }
-        </script>
-    </body>
+							$("#results").append(html);
+						});
+					},
+				);
+			}
+		</script>
+	</body>
 </html>
