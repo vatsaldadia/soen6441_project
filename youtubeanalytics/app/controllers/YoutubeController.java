@@ -1,26 +1,22 @@
 package controllers;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import play.libs.ws.*;
 import play.mvc.*;
 import services.ReadabilityCalculator;
-import services.SentimentAnalyzer;
 
 public class YoutubeController extends Controller {
 
 	private final WSClient ws;
-	private static final String query = "";
-	private final List<String> descriptions;
 	private static final String YOUTUBE_API_KEY =
 		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
 	private static final String YOUTUBE_URL =
@@ -29,14 +25,7 @@ public class YoutubeController extends Controller {
 	@Inject
 	public YoutubeController(WSClient ws) {
 		this.ws = ws;
-		this.descriptions = new ArrayList<>();
 	}
-
-	public ObjectNode modifyHeading() {
-		ObjectNode heading = JsonNodeFactory.instance.objectNode();
-		heading.put("search_terms", query);
-        return heading;
-    }
 
 	public ObjectNode modifyResponse(ObjectNode youtubeResponse) {
 		if (youtubeResponse.has("items")) {
@@ -44,55 +33,66 @@ public class YoutubeController extends Controller {
 			ObjectNode modifiedResponse =
                     youtubeResponse.deepCopy();
 			ArrayNode modifiedItems = JsonNodeFactory.instance.arrayNode();
-			StreamSupport.stream(items.spliterator(), false)
-				.map(item -> {
-					ObjectNode videoNode = (ObjectNode) item;
-					String videoId = videoNode
-						.get("id")
-						.get("videoId")
-						.asText();
-					String description =
-							ws.url(YOUTUBE_URL + "/videos")
-							.addQueryParameter("part", "snippet")
-							.addQueryParameter("id", videoId)
-							.addQueryParameter("key", YOUTUBE_API_KEY)
-							.get()
-							.thenApply(response -> {
-								if (response.getStatus() == 200) {
-									System.out.println(response.asJson());
-									System.out.println("hi");
-								 	return response.asJson()
-													.get("items")
-													.get(0)
-										 			.get("snippets")
-													.get("description")
-													.asText();
-							}
-							return null;
-						}).toString();
-//					System.out.println(description);
-					descriptions.add(description);
+			List<CompletableFuture<String>> futures = new ArrayList<>();
+			for (JsonNode item : items) {
+				ObjectNode videoNode = (ObjectNode) item;
+				String videoId = videoNode
+					.get("id")
+					.get("videoId")
+					.asText();
+				CompletableFuture<String> future = ws.url(YOUTUBE_URL + "/videos")
+					.addQueryParameter("part", "snippet")
+					.addQueryParameter("id", videoId)
+					.addQueryParameter("key", YOUTUBE_API_KEY)
+					.get()
+					.thenApply(response -> {
+						if (response.getStatus() == 200) {
+							return response.asJson()
+											.get("items")
+											.get(0)
+									 		.get("snippet")
+											.get("description")
+											.asText();
+						}
+						return null;
+					}).toCompletableFuture();
+				futures.add(future);
+				modifiedItems.add(videoNode);
+			}
 
-					String sentiment = SentimentAnalyzer.analyzeDescription(
-							description
-					);
+			List<String> descriptions = futures.stream()
+					.map(CompletableFuture::join)
+					.toList();
 
-					double fleschKincaidGradeLevel = ReadabilityCalculator.calculateFleschKincaidGradeLevel(
-							description
-					);
-					double fleschReadingScore = ReadabilityCalculator.calculateFleschReadingScore(
-							description
-					);
+			List<Double> grade = descriptions.stream()
+					.map(ReadabilityCalculator::calculateFleschKincaidGradeLevel)
+					.toList();
 
-					videoNode.put("sentiment", sentiment);
-					videoNode.put("fleschKincaidGradeLevel", String.format("%.2f", fleschKincaidGradeLevel));
-					videoNode.put("fleschReadingScore", String.format("%.2f", fleschReadingScore));
-					return videoNode;
-				})
-				.forEach(modifiedItems::add);
+			List<Double> score = descriptions.stream()
+					.map(ReadabilityCalculator::calculateFleschReadingScore)
+					.toList();
 
-//			modifiedResponse.set("heading", modifyHeading());
+			double gradeAvg = grade.stream()
+					.mapToDouble(Double::doubleValue)
+					.average()
+					.orElse(0.0);
+
+			double scoreAvg = score.stream()
+					.mapToDouble(Double::doubleValue)
+					.average()
+					.orElse(0.0);
+
+
+			for (int i = 0; i < descriptions.size(); i++) {
+				ObjectNode videoNode = (ObjectNode) modifiedItems.get(i);
+				videoNode.put("description", descriptions.get(i));
+				videoNode.put("fleschKincaidGradeLevel", String.format("%.2f", grade.get(i)));
+				videoNode.put("fleschReadingScore", String.format("%.2f", score.get(i)));
+			}
 			modifiedResponse.set("items", modifiedItems);
+			modifiedResponse.put("fleschKincaidGradeLevelAvg", String.format("%.2f", gradeAvg));
+			modifiedResponse.put("fleschReadingScoreAvg", String.format("%.2f", scoreAvg));
+
 			return modifiedResponse;
 		}
 
@@ -100,7 +100,6 @@ public class YoutubeController extends Controller {
 	}
 
 	public CompletionStage<Result> searchVideos(String query) {
-		query = query.trim();
 		return ws
 			.url(YOUTUBE_URL + "/search")
 			.addQueryParameter("part", "snippet")

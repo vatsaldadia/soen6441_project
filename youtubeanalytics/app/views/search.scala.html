@@ -29,22 +29,30 @@
 		<script>
 			function searchVideos() {
 				const query = $("#searchQuery").val();
-				$("#results").append(`
-					<h2>Search term: " + query + "</h2>
-				`);
+				// $("#results").append(`
+				// 	<h2>Search term: " + query + "</h2>
+				// `);
 
 				$.get(
 					`/api/youtube/search?query=${encodeURIComponent(query)}`,
 					function (data) {
+						console.log(data);
+						$("#results").append(
+							`<h2>Search term: ${query}</h2>
+							<body>
+								Flesh-Kincaid Grade Level Avg: ${data.fleschKincaidGradeLevelAvg}<br>
+								Flesch Reading Ease Score Avg: ${data.fleschReadingScoreAvg}
+							</body>`
+						);
 						data.items.forEach((item) => {
-							console.log(item);
+							// console.log(item);
 							const videoId = item.id.videoId;
 							const snippet = item.snippet;
 							const html = `
                         <div class="video-item">
-                            <h3>${snippet.title} : ${item.sentiment}</h3>
+                            <h3>${snippet.title}</h3>
                             <img class="thumbnail" src="${snippet.thumbnails.default.url}">
-                            <p>${snippet.description}</p>
+                            <p>${item.description}</p>
 							<p>Flesch-Kincaid Grade Level: ${item.fleschKincaidGradeLevel}</p>
 							<p>Flesch Reading Ease Score: ${item.fleschReadingScore}</p>
                             <p>Channel: ${snippet.channelTitle}</p>
