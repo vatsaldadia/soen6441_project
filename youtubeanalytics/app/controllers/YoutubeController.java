@@ -4,11 +4,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import play.libs.ws.*;
 import play.mvc.*;
@@ -30,68 +30,83 @@ public class YoutubeController extends Controller {
 	public ObjectNode modifyResponse(ObjectNode youtubeResponse) {
 		if (youtubeResponse.has("items")) {
 			JsonNode items = youtubeResponse.get("items");
-			ObjectNode modifiedResponse =
-                    youtubeResponse.deepCopy();
+			ObjectNode modifiedResponse = youtubeResponse.deepCopy();
 			ArrayNode modifiedItems = JsonNodeFactory.instance.arrayNode();
 			List<CompletableFuture<String>> futures = new ArrayList<>();
 			for (JsonNode item : items) {
 				ObjectNode videoNode = (ObjectNode) item;
-				String videoId = videoNode
-					.get("id")
-					.get("videoId")
-					.asText();
-				CompletableFuture<String> future = ws.url(YOUTUBE_URL + "/videos")
+				String videoId = videoNode.get("id").get("videoId").asText();
+				CompletableFuture<String> future = ws
+					.url(YOUTUBE_URL + "/videos")
 					.addQueryParameter("part", "snippet")
 					.addQueryParameter("id", videoId)
 					.addQueryParameter("key", YOUTUBE_API_KEY)
 					.get()
 					.thenApply(response -> {
 						if (response.getStatus() == 200) {
-							return response.asJson()
-											.get("items")
-											.get(0)
-									 		.get("snippet")
-											.get("description")
-											.asText();
+							return response
+								.asJson()
+								.get("items")
+								.get(0)
+								.get("snippet")
+								.get("description")
+								.asText();
 						}
 						return null;
-					}).toCompletableFuture();
+					})
+					.toCompletableFuture();
 				futures.add(future);
 				modifiedItems.add(videoNode);
 			}
 
-			List<String> descriptions = futures.stream()
-					.map(CompletableFuture::join)
-					.toList();
+			List<String> descriptions = futures
+				.stream()
+				.map(CompletableFuture::join)
+				.collect(Collectors.toList());
 
-			List<Double> grade = descriptions.stream()
-					.map(ReadabilityCalculator::calculateFleschKincaidGradeLevel)
-					.toList();
+			List<Double> grade = descriptions
+				.stream()
+				.map(ReadabilityCalculator::calculateFleschKincaidGradeLevel)
+				.collect(Collectors.toList());
 
-			List<Double> score = descriptions.stream()
-					.map(ReadabilityCalculator::calculateFleschReadingScore)
-					.toList();
+			List<Double> score = descriptions
+				.stream()
+				.map(ReadabilityCalculator::calculateFleschReadingScore)
+				.collect(Collectors.toList());
 
-			double gradeAvg = grade.stream()
-					.mapToDouble(Double::doubleValue)
-					.average()
-					.orElse(0.0);
+			double gradeAvg = grade
+				.stream()
+				.mapToDouble(Double::doubleValue)
+				.average()
+				.orElse(0.0);
 
-			double scoreAvg = score.stream()
-					.mapToDouble(Double::doubleValue)
-					.average()
-					.orElse(0.0);
-
+			double scoreAvg = score
+				.stream()
+				.mapToDouble(Double::doubleValue)
+				.average()
+				.orElse(0.0);
 
 			for (int i = 0; i < descriptions.size(); i++) {
 				ObjectNode videoNode = (ObjectNode) modifiedItems.get(i);
 				videoNode.put("description", descriptions.get(i));
-				videoNode.put("fleschKincaidGradeLevel", String.format("%.2f", grade.get(i)));
-				videoNode.put("fleschReadingScore", String.format("%.2f", score.get(i)));
+				videoNode.put(
+					"fleschKincaidGradeLevel",
+					String.format("%.2f", grade.get(i))
+				);
+				videoNode.put(
+					"fleschReadingScore",
+					String.format("%.2f", score.get(i))
+				);
 			}
 			modifiedResponse.set("items", modifiedItems);
-			modifiedResponse.put("fleschKincaidGradeLevelAvg", String.format("%.2f", gradeAvg));
-			modifiedResponse.put("fleschReadingScoreAvg", String.format("%.2f", scoreAvg));
+			modifiedResponse.put(
+				"fleschKincaidGradeLevelAvg",
+				String.format("%.2f", gradeAvg)
+			);
+			modifiedResponse.put(
+				"fleschReadingScoreAvg",
+				String.format("%.2f", scoreAvg)
+			);
 
 			return modifiedResponse;
 		}
@@ -110,7 +125,6 @@ public class YoutubeController extends Controller {
 			.get()
 			.thenApply(response -> {
 				if (response.getStatus() == 200) {
-
 					ObjectNode modifiedResponse = modifyResponse(
 						(ObjectNode) response.asJson()
 					);
