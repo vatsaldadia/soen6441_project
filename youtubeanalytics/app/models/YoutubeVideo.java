@@ -1,12 +1,12 @@
 public class YoutubeVideo {
 
-    private String videoId;
-    private String title;
-    private String description;
-    private String thumbnailUrl;
-    private String channelTitle;
-    private String publishedAt;
-    private Long viewCount;
+    private final String videoId;
+    private final String title;
+    private final String description;
+    private final String thumbnailUrl;
+    private final String channelTitle;
+    private final String publishedAt;
+    private final Long viewCount;
 
     // Constructor
     public YoutubeVideo(
