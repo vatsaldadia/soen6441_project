@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import play.libs.ws.*;
 import play.mvc.*;
@@ -62,15 +63,15 @@ public class YoutubeController extends Controller {
 
 			List<String> descriptions = futures.stream()
 					.map(CompletableFuture::join)
-					.toList();
+					.collect(Collectors.toList());
 
 			List<Double> grade = descriptions.stream()
 					.map(ReadabilityCalculator::calculateFleschKincaidGradeLevel)
-					.toList();
+					.collect(Collectors.toList());
 
 			List<Double> score = descriptions.stream()
 					.map(ReadabilityCalculator::calculateFleschReadingScore)
-					.toList();
+					.collect(Collectors.toList());
 
 			double gradeAvg = grade.stream()
 					.mapToDouble(Double::doubleValue)

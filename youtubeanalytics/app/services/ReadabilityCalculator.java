@@ -18,17 +18,17 @@ public class ReadabilityCalculator {
         return 206.835 - 1.015 * ((double) totalWords / totalSentences) - 84.6 * ((double) totalSyllables / totalWords);
     }
 
-    private static int countWords(String description) {
+    static int countWords(String description) {
         String[] words = description.split("\\s+");
         return words.length;
     }
 
-    private static int countSentences(String description) {
+    static int countSentences(String description) {
         String[] sentences = description.split("[.!?]");
         return sentences.length;
     }
 
-    private static int countSyllables(String word) {
+    static int countSyllables(String word) {
         String[] words = word.split("\\s+");
         int syllableCount = 0;
         for (String w : words) {
@@ -37,7 +37,7 @@ public class ReadabilityCalculator {
         return syllableCount;
     }
 
-    private static int countSyllablesInWord(String word) {
+    static int countSyllablesInWord(String word) {
         word = word.toLowerCase();
         int count = 0;
         boolean isPrevVowel = false;
