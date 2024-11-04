@@ -41,8 +41,9 @@
 							`<h2>Search term: ${query}</h2>
 							<body>
 								Flesh-Kincaid Grade Level Avg: ${data.fleschKincaidGradeLevelAvg}<br>
-								Flesch Reading Ease Score Avg: ${data.fleschReadingScoreAvg}
-							</body>`
+								Flesch Reading Ease Score Avg: ${data.fleschReadingScoreAvg}<br>
+								Sentiment: ${data.sentiment}
+							</body>`,
 						);
 						data.items.forEach((item) => {
 							// console.log(item);

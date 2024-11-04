@@ -13,6 +13,7 @@ import javax.inject.Inject;
 import play.libs.ws.*;
 import play.mvc.*;
 import services.ReadabilityCalculator;
+import services.SentimentAnalyzer;
 
 public class YoutubeController extends Controller {
 
@@ -86,6 +87,8 @@ public class YoutubeController extends Controller {
 				.average()
 				.orElse(0.0);
 
+			String sentiment = SentimentAnalyzer.analyzeSentiment(descriptions);
+
 			for (int i = 0; i < descriptions.size(); i++) {
 				ObjectNode videoNode = (ObjectNode) modifiedItems.get(i);
 				videoNode.put("description", descriptions.get(i));
@@ -99,6 +102,7 @@ public class YoutubeController extends Controller {
 				);
 			}
 			modifiedResponse.set("items", modifiedItems);
+			modifiedResponse.put("sentiment", sentiment);
 			modifiedResponse.put(
 				"fleschKincaidGradeLevelAvg",
 				String.format("%.2f", gradeAvg)
