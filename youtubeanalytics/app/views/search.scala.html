@@ -29,12 +29,15 @@
 		<script>
 			function searchVideos() {
 				const query = $("#searchQuery").val();
-				$("#results").empty();
+				$("#results").append(`
+					<h2>Search term: " + query + "</h2>
+				`);
 
 				$.get(
 					`/api/youtube/search?query=${encodeURIComponent(query)}`,
 					function (data) {
 						data.items.forEach((item) => {
+							console.log(item);
 							const videoId = item.id.videoId;
 							const snippet = item.snippet;
 							const html = `
@@ -42,6 +45,8 @@
                             <h3>${snippet.title} : ${item.sentiment}</h3>
                             <img class="thumbnail" src="${snippet.thumbnails.default.url}">
                             <p>${snippet.description}</p>
+							<p>Flesch-Kincaid Grade Level: ${item.fleschKincaidGradeLevel}</p>
+							<p>Flesch Reading Ease Score: ${item.fleschReadingScore}</p>
                             <p>Channel: ${snippet.channelTitle}</p>
                             <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">Watch Video</a>
                         </div>
