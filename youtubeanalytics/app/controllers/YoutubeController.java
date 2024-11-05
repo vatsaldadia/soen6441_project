@@ -13,18 +13,28 @@ import javax.inject.Inject;
 import play.libs.ws.*;
 import play.mvc.*;
 import services.ReadabilityCalculator;
+import services.WordStatsService;
+import models.YoutubeVideo;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.stream.Stream;
 
 public class YoutubeController extends Controller {
 
 	private final WSClient ws;
+	private final WordStatsService wordStatsService;
 	private static final String YOUTUBE_API_KEY =
 		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
 	@Inject
-	public YoutubeController(WSClient ws) {
+	public YoutubeController(WSClient ws, WordStatsService wordStatsService) {
 		this.ws = ws;
+		this.wordStatsService = wordStatsService;
 	}
 
 	public ObjectNode modifyResponse(ObjectNode youtubeResponse) {
@@ -129,4 +139,87 @@ public class YoutubeController extends Controller {
 				}
 			});
 	}
+
+	// New method to get word stats
+	public Result getWordStats(String query) {
+		// Fetch the list of videos by search query
+		List<YoutubeVideo> videos = fetchVideosBySearchTerm(query);
+
+		// Concatenate all descriptions into a single string
+		List<String> allDescriptions = videos.stream()
+				.map(YoutubeVideo::getDescription)
+				.collect(Collectors.toList());
+
+		// Split the string into words, normalize to lowercase, and count word frequencies
+		Map<String, Long> sortedWordCount = wordStatsService.calculateWordStats(allDescriptions);
+
+		// Pass the sorted word stats map and search query to the view
+		return ok(views.html.wordstats.render(sortedWordCount, query));
+	}
+
+	private List<YoutubeVideo> fetchVideosBySearchTerm(String query) {
+		// Create an empty list to store the fetched video details
+		List<YoutubeVideo> videoList = new ArrayList<>();
+
+		// Perform YouTube search similar to searchVideos method
+		CompletionStage<JsonNode> responseStage = ws
+				.url(YOUTUBE_URL + "/search")
+				.addQueryParameter("part", "snippet")
+				.addQueryParameter("maxResults", "50")
+				.addQueryParameter("q", query)
+				.addQueryParameter("type", "video")
+				.addQueryParameter("key", YOUTUBE_API_KEY)
+				.get()
+				.thenApply(response -> {
+					if (response.getStatus() == 200) {
+						return response.asJson();
+					} else {
+						return null; // Handle the error case
+					}
+				});
+
+		// Wait for the response to complete
+		JsonNode response = responseStage.toCompletableFuture().join();
+
+		if (response != null && response.has("items")) {
+			JsonNode items = response.get("items");
+
+			// Loop through the search results and fetch details
+			for (JsonNode item : items) {
+				JsonNode snippet = item.get("snippet");
+				String videoId = item.get("id").get("videoId").asText();
+				String title = snippet.get("title").asText();
+				String description = snippet.get("description").asText();
+				String thumbnailUrl = snippet.get("thumbnails").get("default").get("url").asText();
+				String channelTitle = snippet.get("channelTitle").asText();
+				String publishedAt = snippet.get("publishedAt").asText();
+
+				// Fetch additional video stats (like viewCount)
+				CompletionStage<JsonNode> videoDetailsStage = ws
+						.url(YOUTUBE_URL + "/videos")
+						.addQueryParameter("part", "statistics")
+						.addQueryParameter("id", videoId)
+						.addQueryParameter("key", YOUTUBE_API_KEY)
+						.get()
+						.thenApply(videoResponse -> {
+							if (videoResponse.getStatus() == 200) {
+								return videoResponse.asJson();
+							} else {
+								return null;
+							}
+						});
+
+				JsonNode videoDetails = videoDetailsStage.toCompletableFuture().join();
+				Long viewCount = null;
+				// Create a YoutubeVideo object and add it to the list
+				YoutubeVideo video = new YoutubeVideo(
+						videoId, title, description, thumbnailUrl, channelTitle, publishedAt, viewCount
+				);
+				videoList.add(video);
+			}
+		}
+
+		return videoList; // Return the list of videos
+	}
+
 }
