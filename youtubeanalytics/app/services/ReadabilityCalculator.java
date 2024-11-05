@@ -1,6 +1,23 @@
 package services;
 
+
+import java.util.List;
+
 public class ReadabilityCalculator {
+
+    public static double calculateGradeAvg(List<Double> grades) {
+        return grades.stream().
+                mapToDouble(Double::doubleValue).
+                average().
+                orElse(0.0);
+    }
+
+    public static double calculateScoreAvg(List<Double> scores) {
+        return scores.stream().
+                mapToDouble(Double::doubleValue).
+                average().
+                orElse(0.0);
+    }
 
     public static double calculateFleschKincaidGradeLevel(String description) {
         int totalWords = countWords(description);
