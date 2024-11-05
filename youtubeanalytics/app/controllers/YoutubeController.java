@@ -64,38 +64,30 @@ public class YoutubeController extends Controller {
 				.map(CompletableFuture::join)
 				.collect(Collectors.toList());
 
-			List<Double> grade = descriptions
+			List<Double> grades = descriptions
 				.stream()
 				.map(ReadabilityCalculator::calculateFleschKincaidGradeLevel)
 				.collect(Collectors.toList());
 
-			List<Double> score = descriptions
+			List<Double> scores = descriptions
 				.stream()
 				.map(ReadabilityCalculator::calculateFleschReadingScore)
 				.collect(Collectors.toList());
 
-			double gradeAvg = grade
-				.stream()
-				.mapToDouble(Double::doubleValue)
-				.average()
-				.orElse(0.0);
+			double gradeAvg = ReadabilityCalculator.calculateGradeAvg(grades);
 
-			double scoreAvg = score
-				.stream()
-				.mapToDouble(Double::doubleValue)
-				.average()
-				.orElse(0.0);
+			double scoreAvg = ReadabilityCalculator.calculateScoreAvg(scores);
 
 			for (int i = 0; i < descriptions.size(); i++) {
 				ObjectNode videoNode = (ObjectNode) modifiedItems.get(i);
 				videoNode.put("description", descriptions.get(i));
 				videoNode.put(
 					"fleschKincaidGradeLevel",
-					String.format("%.2f", grade.get(i))
+					String.format("%.2f", grades.get(i))
 				);
 				videoNode.put(
 					"fleschReadingScore",
-					String.format("%.2f", score.get(i))
+					String.format("%.2f", scores.get(i))
 				);
 			}
 			modifiedResponse.set("items", modifiedItems);
