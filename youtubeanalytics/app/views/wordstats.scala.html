@@ -1,0 +1,24 @@
+@(wordStats: Map[String, Long], searchTerm: String)
+
+@main("Word Stats for " + searchTerm) {
+<h1>Word Statistics for Search Term: "@searchTerm"</h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>Word</th>
+        <th>Frequency</th>
+    </tr>
+    </thead>
+    <tbody>
+    @for((word, count) <- wordStats) {
+    <tr>
+        <td>@word</td>
+        <td>@count</td>
+    </tr>
+    }
+    </tbody>
+</table>
+
+<p><a href="/search">Back to Search</a></p>
+}
