@@ -1,80 +1,123 @@
+package services;
+
 import static org.junit.Assert.*;
-import static play.test.Helpers.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-import java.util.stream.Collectors;
-import javax.inject.Inject;
 import org.junit.Test;
-import play.libs.ws.*;
-import play.mvc.*;
-import play.test.WithApplication;
-import services.ReadabilityCalculator;
-import services.SentimentAnalyzer;
 
-public class SentimentAnalyzerTest extends WithApplication {
-
-	private SentimentAnalyzer sentimentAnalyzer;
-	private WSClient ws;
-
-	@Before
-	public void setup() {
-		// Initialize the service
-		ws = app.injector().instanceOf(WSClient.class);
-		youtubeService = new YouTubeService(ws);
-	}
-
-	// @Test
-	// public void testSearchVideos() {
-	// 	// Test searching videos
-	// 	CompletionStage<ObjectNode> futureResponse =
-	// 		youtubeService.searchVideos("test query");
-
-	// 	ObjectNode response = futureResponse.toCompletableFuture().join();
-
-	// 	assertNotNull(response);
-	// 	assertTrue(response.has("items"));
-	// }
-
-	// @Test
-	// public void testModifyResponse() {
-	// 	// Create a sample response
-	// 	ObjectNode sampleResponse = Json.newObject();
-	// 	ArrayNode items = Json.newArray();
-	// 	ObjectNode item = Json.newObject();
-	// 	// Add necessary fields to item
-	// 	items.add(item);
-	// 	sampleResponse.set("items", items);
-
-	// 	CompletionStage<ObjectNode> futureModified =
-	// 		youtubeService.modifyResponse(sampleResponse);
-
-	// 	ObjectNode modified = futureModified.toCompletableFuture().join();
-
-	// 	assertNotNull(modified);
-	// 	assertTrue(modified.has("items"));
-	// 	// Add more specific assertions
-	// }
+public class SentimentAnalyzerTest {
 
 	@Test
-	public void testSentimentAnalysis() {
-		String description = "This is a happy wonderful amazing video";
-		String sentiment = youtubeService.analyzeSentiment(description);
+	public void testSentimentAnalyzer() {
+		// Test 1: Happy words only
+		String happyDescription = "This is a happy wonderful amazing video";
+		double happyResult = SentimentAnalyzer.analyzeDescription(
+			happyDescription
+		);
+		assertTrue("Should be positive for happy words", happyResult > 0);
+		assertEquals(100.0, happyResult, 0.01);
 
-		assertEquals(":-)", sentiment);
-	}
+		// Test 2: Sad words only
+		String sadDescription = "This is sad and terrible content";
+		double sadResult = SentimentAnalyzer.analyzeDescription(sadDescription);
+		assertTrue("Should be negative for sad words", sadResult < 0);
+		assertEquals(-100.0, sadResult, 0.01);
 
-	@Test
-	public void testReadabilityScore() {
-		String description = "This is a test description.";
-		double score = youtubeService.calculateReadabilityScore(description);
+		// Test 3: Mixed sentiment
+		String mixedDescription = "This is happy but also sad content";
+		double mixedResult = SentimentAnalyzer.analyzeDescription(
+			mixedDescription
+		);
+		assertEquals(0.0, mixedResult, 0.01);
 
-		assertTrue(score >= 0);
+		// Test 4: No sentiment words
+		String neutralDescription = "This is just a normal video";
+		double neutralResult = SentimentAnalyzer.analyzeDescription(
+			neutralDescription
+		);
+		assertEquals(0.0, neutralResult, 0.01);
+
+		// Test 5: Emojis
+		String emojiDescription = "This video 😊 is great 😃";
+		double emojiResult = SentimentAnalyzer.analyzeDescription(
+			emojiDescription
+		);
+		assertTrue("Should be positive for happy emojis", emojiResult > 0);
+
+		// Test 6: Case insensitivity
+		String upperCaseDescription = "This is HAPPY and WONDERFUL";
+		double caseResult = SentimentAnalyzer.analyzeDescription(
+			upperCaseDescription
+		);
+		assertTrue("Should be positive regardless of case", caseResult > 0);
+
+		// Test 7: Multiple spaces
+		String spacedDescription = "happy    wonderful   amazing";
+		double spacedResult = SentimentAnalyzer.analyzeDescription(
+			spacedDescription
+		);
+		assertEquals(100.0, spacedResult, 0.01);
+
+		// Test 8: analyzeSentiment with all happy descriptions
+		List<String> happyDescriptions = Arrays.asList(
+			"happy wonderful video",
+			"amazing fantastic content",
+			"great excellent stuff"
+		);
+		String happySentiment = SentimentAnalyzer.analyzeSentiment(
+			happyDescriptions
+		);
+		assertEquals(":-)", happySentiment);
+
+		// Test 9: analyzeSentiment with all sad descriptions
+		List<String> sadDescriptions = Arrays.asList(
+			"sad terrible video",
+			"horrible awful content",
+			"worst disappointing stuff"
+		);
+		String sadSentiment = SentimentAnalyzer.analyzeSentiment(
+			sadDescriptions
+		);
+		assertEquals(":-(", sadSentiment);
+
+		// Test 10: analyzeSentiment with mixed descriptions
+		List<String> mixedDescriptions = Arrays.asList(
+			"happy wonderful video",
+			"terrible awful content",
+			"normal neutral stuff"
+		);
+		String mixedSentiment = SentimentAnalyzer.analyzeSentiment(
+			mixedDescriptions
+		);
+		assertEquals(":-|", mixedSentiment);
+
+		// Test 11: Empty list
+		List<String> emptyList = Collections.emptyList();
+		String emptyResult = SentimentAnalyzer.analyzeSentiment(emptyList);
+		assertEquals(":-|", emptyResult);
+
+		// Test 12: No sentiment words in list
+		List<String> neutralDescriptions = Arrays.asList(
+			"regular video",
+			"normal content",
+			"standard stuff"
+		);
+		String neutralSentiment = SentimentAnalyzer.analyzeSentiment(
+			neutralDescriptions
+		);
+		assertEquals(":-|", neutralSentiment);
+
+		// Test 13: Below threshold sentiment
+		List<String> belowThresholdDescriptions = Arrays.asList(
+			"happy video but also sad",
+			"good and bad content",
+			"normal stuff"
+		);
+		String thresholdResult = SentimentAnalyzer.analyzeSentiment(
+			belowThresholdDescriptions
+		);
+		assertEquals(":-|", thresholdResult);
 	}
 }
