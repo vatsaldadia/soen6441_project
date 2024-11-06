@@ -1,9 +1,26 @@
 package services;
 
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ReadabilityCalculatorTest {
+
+    @Test
+    public void testCalculateGradeAvg() {
+        double expectedGradeAvg = 3.0;
+        double actualGradeAvg = ReadabilityCalculator.calculateGradeAvg(List.of(2.0, 3.0, 4.0));
+        assertEquals(expectedGradeAvg, actualGradeAvg);
+    }
+
+    @Test
+    public void testCalculateScoreAvg() {
+        double expectedScoreAvg = 3.0;
+        double actualScoreAvg = ReadabilityCalculator.calculateScoreAvg(List.of(2.0, 3.0, 4.0));
+        assertEquals(expectedScoreAvg, actualScoreAvg);
+    }
 
     @Test
     public void testCalculateFleschKincaidGradeLevel() {

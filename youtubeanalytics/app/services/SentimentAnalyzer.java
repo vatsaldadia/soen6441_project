@@ -60,16 +60,35 @@ public class SentimentAnalyzer {
 		"=("
 	);
 
-	public static List<String> analyzeSentiment(List<String> descriptions) {
-		List<String> sentimentList = descriptions
+	public static String analyzeSentiment(List<String> descriptions) {
+		double[] sentiments = descriptions
 			.stream()
-			.map(SentimentAnalyzer::analyzeDescription)
-			.collect(Collectors.toList());
+			.mapToDouble(SentimentAnalyzer::analyzeDescription)
+			.filter(score -> score != 0.0)
+			.toArray();
 
-		return sentimentList;
+		double happyAverage = Arrays.stream(sentiments)
+			.filter(score -> score > 0)
+			.average()
+			.orElse(0.0);
+
+		double sadAverage = Arrays.stream(sentiments)
+			.filter(score -> score < 0)
+			.average()
+			.orElse(0.0);
+
+		sadAverage = Math.abs(sadAverage);
+
+		if (happyAverage > sadAverage && happyAverage > 70) {
+			return ":-)";
+		} else if (sadAverage > happyAverage && sadAverage > 70) {
+			return ":-(";
+		} else {
+			return ":-|";
+		}
 	}
 
-	public static String analyzeDescription(String description) {
+	public static double analyzeDescription(String description) {
 		String[] words = description.toLowerCase().split("\\s+");
 
 		long totalSentimentWords = Arrays.stream(words)
@@ -78,9 +97,7 @@ public class SentimentAnalyzer {
 			)
 			.count();
 
-		if (totalSentimentWords == 0) {
-			return ":-|";
-		}
+		totalSentimentWords = Math.max((long) 1, totalSentimentWords);
 
 		long happyCount = Arrays.stream(words)
 			.filter(HAPPY_WORDS::contains)
@@ -93,19 +110,21 @@ public class SentimentAnalyzer {
 		double happyPercentage = (happyCount * 100) / totalSentimentWords;
 		double sadPercentage = (sadCount * 100) / totalSentimentWords;
 
-		return getSentimentEmoticon(happyPercentage, sadPercentage);
-	}
-
-	private static String getSentimentEmoticon(
-		double happyPercentage,
-		double sadPercentage
-	) {
-		if (happyPercentage > 0.7) {
-			return ":-)";
-		} else if (sadPercentage > 0.7) {
-			return ":-(";
+		if (happyCount > sadCount) {
+			return happyPercentage;
+		} else if (sadCount > happyCount) {
+			return -1 * sadPercentage;
 		} else {
-			return ":-|";
+			return 0.0;
 		}
 	}
+	// private static String getSentimentEmoticon(double sentiment) {
+	// 	if (sentiment > 0.7) {
+	// 		return ":-)";
+	// 	} else if (sentiment < 0.7) {
+	// 		return ":-(";
+	// 	} else {
+	// 		return ":-|";
+	// 	}
+	// }
 }
