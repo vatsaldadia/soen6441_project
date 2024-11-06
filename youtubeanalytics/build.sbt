@@ -13,5 +13,7 @@ libraryDependencies ++= Seq(
   ws,
   "junit" % "junit" % "4.13.2" % Test,
   "org.junit.jupiter" % "junit-jupiter-api" % "5.8.1" % Test,
-  "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.1" % Test
+  "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.1" % Test,
+  "org.mockito" % "mockito-core" % "5.11.0",
+  "org.mockito" % "mockito-junit-jupiter" % "5.12.0"
 )
