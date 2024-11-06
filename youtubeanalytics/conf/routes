@@ -3,8 +3,7 @@
 # ~~~~
 
 # Get Routes
-GET     /                           controllers.HomeController.index()
-GET     /search                     controllers.HomeController.search()
+GET     /                           controllers.YoutubeController.search()
 GET     /api/youtube/search         controllers.YoutubeController.searchVideos(query: String)
 GET     /wordstats/:query           controllers.YoutubeController.getWordStats(query)
 GET     /channel/:channelId         controllers.YoutubeController.getChannelProfile(channelId: String)

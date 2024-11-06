@@ -41,6 +41,10 @@ public class YoutubeController extends Controller {
 		this.wordStatsService = wordStatsService;
 	}
 
+	public Result search() {
+		return ok(views.html.search.render());
+	}
+
 	public CompletionStage<ObjectNode> modifyResponse(
 		ObjectNode youtubeResponse
 	) {
