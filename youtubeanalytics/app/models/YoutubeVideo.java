@@ -1,3 +1,5 @@
+package models;
+
 public class YoutubeVideo {
 
     private final String videoId;
@@ -25,5 +27,9 @@ public class YoutubeVideo {
         this.channelTitle = channelTitle;
         this.publishedAt = publishedAt;
         this.viewCount = viewCount;
+    }
+
+    public String getDescription() {
+        return description;
     }
 }
