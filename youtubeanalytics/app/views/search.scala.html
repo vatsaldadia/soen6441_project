@@ -43,6 +43,9 @@
 					`/api/youtube/search?query=${encodeURIComponent(query)}`,
 					function (data) {
 						console.log(data);
+						const currentResults = $("#results").html();
+						$("#results").empty();
+
 						$("#results").append(
 							`<h2>Search term: ${query} <a id="moreStats" href="/wordstats/${encodeURIComponent(query)}">More Stats</a></h2>
 							<body>
@@ -66,8 +69,11 @@
                             <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">Watch Video</a>
                         </div>
                     `;
+
 							$("#results").append(html);
 						});
+
+						$("#results").append(currentResults);
 					},
 				);
 			}
