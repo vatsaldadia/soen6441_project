@@ -1,0 +1,60 @@
+@(channel: Map[String, String])
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>@channel("title") - Channel Profile</title>
+
+  <style>
+    .full-description {
+        white-space: normal;    /* Allows text to wrap normally */
+        word-wrap: break-word;  /* Breaks long words if necessary */
+    }
+  </style>
+
+
+</head>
+<body>
+<img src="@channel.get("thumbnailDefault")" alt="Thumbnail Default">
+
+
+<h3>Channel Profile</h3>
+<p>Channel: <a href="@channel.get("channelLink")" target="_blank">Visit Channel on YouTube</a></p>
+
+
+
+
+<h2>@channel("title")</h2>
+<p>@channel("description")</p>
+<p>Country: @channel.get("country")</p>
+<h3>Statistics</h3>
+<p>Subscribers: @channel("subscriberCount")</p>
+<p>Total Views: @channel("viewCount")</p>
+<p>Video Count: @channel.get("videoCount")</p>
+
+
+
+<h3>Latest 10 Videos</h3>
+<ul>
+  @if(channel.containsKey("latestVideos")) {
+  @for(video <- play.libs.Json.parse(channel.get("latestVideos")).elements()) {
+  <li>
+    <a href="https://www.youtube.com/watch?v=@video.get("videoId").asText()" target="_blank">
+    <img src="@video.get("thumbnailUrl").asText()" alt="Thumbnail" />
+    @video.get("title").asText()
+
+    </a>
+    <p class="full-description">@video.get("description").asText()</p>
+
+  </li>
+  }
+  } else {
+  <p>No recent videos available.</p>
+  }
+</ul>
+
+
+
+</body>
+</html>
