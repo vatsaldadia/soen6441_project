@@ -62,7 +62,7 @@
                             <p>${item.description}</p>
 							<p>Flesch-Kincaid Grade Level: ${item.fleschKincaidGradeLevel}</p>
 							<p>Flesch Reading Ease Score: ${item.fleschReadingScore}</p>
-                            <p>Channel: ${snippet.channelTitle}</p>
+                            <p>Channel: <a href="/channel/${encodeURIComponent(snippet.channelId)}" target="_blank">${snippet.channelTitle}</a></p>-->
                             <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">Watch Video</a>
                         </div>
                     `;
