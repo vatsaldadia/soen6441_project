@@ -32,4 +32,27 @@ public class YoutubeVideo {
     public String getDescription() {
         return description;
     }
+    public String getVideoId() {
+        return videoId;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public String getChannelTitle() {
+        return channelTitle;
+    }
+
+    public String getPublishedAt() {
+        return publishedAt;
+    }
+
+    public Long getViewCount() {
+        return viewCount;
+    }
 }
