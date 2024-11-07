@@ -1,0 +1,27 @@
+@import models.YoutubeVideo
+
+@(video: YoutubeVideo, tags: List[String])
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>@video.getTitle</title>
+</head>
+<body>
+<h1>@video.getTitle</h1>
+<img src="@video.getThumbnailUrl" alt="Video Thumbnail" />
+<p><strong>Description:</strong> @video.getDescription</p>
+<p><strong>Channel:</strong> @video.getChannelTitle</p>
+<p><strong>Published At:</strong> @video.getPublishedAt</p>
+<p><strong>View Count:</strong> @video.getViewCount</p>
+
+<h3>Tags:</h3>
+<ul>
+    @for(tag <- tags) {
+    <li>@tag</li>
+    }
+</ul>
+
+<a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">Watch Video on YouTube</a>
+</body>
+</html>

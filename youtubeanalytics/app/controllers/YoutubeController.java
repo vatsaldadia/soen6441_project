@@ -481,4 +481,56 @@ public class YoutubeController extends Controller {
 				}
 			});
 	}
+	public CompletionStage<Result> getVideoDetails(String video_id) {
+		return ws
+				.url(YOUTUBE_URL + "/videos")
+				.addQueryParameter("part", "snippet,contentDetails,statistics") // Get snippet (title, description), content details (tags), statistics (view count)
+				.addQueryParameter("id", video_id)
+				.addQueryParameter("key", YOUTUBE_API_KEY)
+				.get()
+				.thenCompose(response -> {
+					if (response.getStatus() == 200) {
+						JsonNode videoData = response.asJson();
+						JsonNode items = videoData.get("items");
+
+						if (items != null && items.size() > 0) {
+							JsonNode videoInfo = items.get(0);
+							String title = videoInfo.get("snippet").get("title").asText();
+							String description = videoInfo.get("snippet").get("description").asText();
+							String thumbnailUrl = videoInfo.get("snippet").get("thumbnails").get("default").get("url").asText();
+							String channelTitle = videoInfo.get("snippet").get("channelTitle").asText();
+							String publishedAt = videoInfo.get("snippet").get("publishedAt").asText();
+							Long viewCount = videoInfo.get("statistics").get("viewCount").asLong();
+							ArrayNode tagsNode = (ArrayNode) videoInfo.get("snippet").get("tags");
+
+							List<String> tags = new ArrayList<>();
+							if (tagsNode != null) {
+								for (JsonNode tagNode : tagsNode) {
+									tags.add(tagNode.asText());
+								}
+							}
+
+							YoutubeVideo video = new YoutubeVideo(
+									video_id,
+									title,
+									description,
+									thumbnailUrl,
+									channelTitle,
+									publishedAt,
+									viewCount
+							);
+
+							return CompletableFuture.completedFuture(
+									ok(views.html.videoDetails.render(video, tags))
+							);
+						} else {
+							return CompletableFuture.completedFuture(notFound("Video not found"));
+						}
+					} else {
+						return CompletableFuture.completedFuture(
+								internalServerError("Error fetching video details: " + response.getBody())
+						);
+					}
+				});
+	}
 }
