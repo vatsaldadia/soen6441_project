@@ -10,8 +10,8 @@
 				border: 1px solid #ddd;
 			}
 			.thumbnail {
-				width: 120px;
-				height: 90px;
+				width: 150px;
+				height: 100px;
 			}
 			#moreStats {
 				margin-left: 10px;
@@ -19,10 +19,13 @@
 				cursor: pointer;
 				text-decoration: underline;
 			}
+
 		</style>
 	</head>
 	<body>
 		<div>
+			<Center>
+			<H2> Welcome to YT Lytics</H2>
 			<input
 				type="text"
 				id="searchQuery"
@@ -31,6 +34,7 @@
 			<button onclick="searchVideos()">Search</button>
 		</div>
 		<div id="results"></div>
+		</Center>
 
 		<script>
 			function searchVideos() {
@@ -47,12 +51,14 @@
 						$("#results").empty();
 
 						$("#results").append(
-							`<h2>Search term: ${query} <a id="moreStats" href="/wordstats/${encodeURIComponent(query)}">More Stats</a></h2>
+							`<h2>Search term: ${query} </h2>
+							<b>Word Stats:</b><a id="moreStats" href="/wordstats/${encodeURIComponent(query)}">More Stats</a><br>
 							<body>
-								Flesh-Kincaid Grade Level Avg: ${data.fleschKincaidGradeLevelAvg}<br>
-								Flesch Reading Ease Score Avg: ${data.fleschReadingScoreAvg}<br>
-								Sentiment : ${data.sentiment}
+								<b>Sentiment :</b> ${data.sentiment}<br>
+								<b>Flesh-Kincaid Grade Level Avg:</b> ${data.fleschKincaidGradeLevelAvg}<br>
+								<b>Flesch Reading Ease Score Avg:</b> ${data.fleschReadingScoreAvg}
 							</body>`,
+
 						);
 						data.items.forEach((item) => {
 							// console.log(item);
@@ -60,13 +66,12 @@
 							const snippet = item.snippet;
 							const html = `
                         <div class="video-item">
-                            <h3>${snippet.title}</h3>
-                            <img class="thumbnail" src="${snippet.thumbnails.default.url}">
-                            <p>${item.description}</p>
-							<p>Flesch-Kincaid Grade Level: ${item.fleschKincaidGradeLevel}</p>
-							<p>Flesch Reading Ease Score: ${item.fleschReadingScore}</p>
-                            <p>Channel: <a href="/channel/${encodeURIComponent(snippet.channelId)}" target="_blank">${snippet.channelTitle}</a></p>-->
-                            <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">Watch Video</a>
+							<h3><p>Title: <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">${snippet.title}</a></p> </h3>
+                            <h3><p>Channel: <a href="/channel/${encodeURIComponent(snippet.channelId)}" target="_blank">${snippet.channelTitle}</a></p></h3>
+                            <img class="thumbnail" style="top: 0; right: 0; width: 100px; height: auto;" src="${snippet.thumbnails.default.url}">
+                            <h3><p>Description:</h3> ${item.description}</p>
+							<b><p>Flesch-Kincaid Grade Level:</b> ${item.fleschKincaidGradeLevel}</p>
+							<b><p>Flesch Reading Ease Score:</b> ${item.fleschReadingScore}</p>
                         	<a href="/tag?video_id=${videoId}" target="_blank">Tags</a>
                         </div>
                     `;
