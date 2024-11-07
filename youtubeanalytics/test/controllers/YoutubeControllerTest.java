@@ -1,20 +1,32 @@
 package controllers;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import models.YoutubeVideo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import play.libs.ws.WSClient;
 import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 import play.mvc.Result;
 import services.ReadabilityCalculator;
+import services.WordStatsService;
+import views.html.search;
+import views.html.wordstats;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
@@ -27,6 +39,7 @@ import static play.mvc.Http.Status.INTERNAL_SERVER_ERROR;
 import static play.test.Helpers.contentAsString;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 public class YoutubeControllerTest {
 
     @Mock
@@ -51,20 +64,29 @@ public class YoutubeControllerTest {
     private static final String MOCK_VIDEO_ID = "mockVideoId";
     private static final String SEARCH_API_URL = "https://www.googleapis.com/youtube/v3/search";
     private static final String VIDEOS_API_URL = "https://www.googleapis.com/youtube/v3/videos";
+//    private static final String CHANNEL_API_URL =
 
     @BeforeEach
     public void setUp() {
-        // Mock the WSClient to return different requests based on the URL
         when(wsClient.url(eq(SEARCH_API_URL))).thenReturn(searchRequest);
-//        when(wsClient.url(eq(VIDEOS_API_URL))).thenReturn(videoDetailsRequest);
 
         // Mock the search API request and response
         when(searchRequest.addQueryParameter(any(String.class), any(String.class))).thenReturn(searchRequest);
         when(searchRequest.get()).thenReturn(CompletableFuture.completedFuture(searchResponse));
 
-        // Mock the video details API request and response
-//        when(videoDetailsRequest.addQueryParameter(any(String.class), any(String.class))).thenReturn(videoDetailsRequest);
-//        when(videoDetailsRequest.get()).thenReturn(CompletableFuture.completedFuture(videoDetailsResponse));
+    }
+
+    @Test
+    public void testSearch() {
+        // Execute the search() method
+        Result result = youtubeController.search();
+
+        // Verify the status is OK
+        assertEquals(OK, result.status());
+
+        // Verify that the rendered content is as expected
+        String renderedContent = contentAsString(result);
+        assertEquals(search.render().body(), renderedContent);
     }
 
     @Test
@@ -124,6 +146,7 @@ public class YoutubeControllerTest {
         emptyResponse.set("items", JsonNodeFactory.instance.arrayNode());
         emptyResponse.put("fleschKincaidGradeLevelAvg", "0.00");
         emptyResponse.put("fleschReadingScoreAvg", "0.00");
+        emptyResponse.put("sentiment", ":-|");
 
         when(searchResponse.getStatus()).thenReturn(OK);
         when(searchResponse.asJson()).thenReturn(emptyResponse);
@@ -152,4 +175,42 @@ public class YoutubeControllerTest {
         assertEquals(INTERNAL_SERVER_ERROR, result.status());
         assertEquals("YouTube API error: YouTube API error", contentAsString(result));
     }
+
+    @Test
+    public void testFetchVideosBySearchTerm() throws Exception {
+        // Prepare a mock JSON response
+        ObjectNode mockResponse = JsonNodeFactory.instance.objectNode();
+        ArrayNode itemsArray = mockResponse.putArray("items");
+
+        // Add a video entry to the items array
+        ObjectNode videoItem = itemsArray.addObject();
+        videoItem.putObject("id").put("videoId", "12345");
+        ObjectNode snippet = videoItem.putObject("snippet");
+        snippet.put("title", "Sample Video Title");
+        snippet.put("description", "Sample Video Description");
+        snippet.putObject("thumbnails").putObject("default").put("url", "http://sample.thumbnail.url");
+        snippet.put("channelTitle", "Sample Channel Title");
+        snippet.put("publishedAt", "2023-01-01T00:00:00Z");
+        snippet.put("viewCount", 1000);
+
+        // Mock the response from WSClient
+        when(searchRequest.get()).thenReturn(CompletableFuture.completedFuture(searchResponse));
+        when(searchResponse.getStatus()).thenReturn(200);
+        when(searchResponse.asJson()).thenReturn(mockResponse);
+
+        // Execute the fetchVideosBySearchTerm method
+        List<YoutubeVideo> videos = youtubeController.fetchVideosBySearchTerm(MOCK_QUERY);
+
+        // Verify the parsed result
+        assertEquals(1, videos.size());
+        YoutubeVideo video = videos.get(0);
+        assertEquals("12345", video.getVideoId());
+        assertEquals("Sample Video Title", video.getTitle());
+        assertEquals("Sample Video Description", video.getDescription());
+        assertEquals("http://sample.thumbnail.url", video.getThumbnailUrl());
+        assertEquals("Sample Channel Title", video.getChannelTitle());
+        assertEquals("2023-01-01T00:00:00Z", video.getPublishedAt());
+        assertEquals(1000L, video.getViewCount());
+    }
+
 }
