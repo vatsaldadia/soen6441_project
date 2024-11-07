@@ -8,7 +8,7 @@
     <title>@video.getTitle</title>
 </head>
 <body>
-<h1>@video.getTitle</h1>
+<h1><a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">@video.getTitle</a></h1>
 <img src="@video.getThumbnailUrl" alt="Video Thumbnail" />
 <p><strong>Description:</strong> @video.getDescription</p>
 <p><strong>Channel:</strong> @video.getChannelTitle</p>
@@ -22,6 +22,6 @@
     }
 </ul>
 
-<a href="https://www.youtube.com/watch?v=@video.getVideoId" target="_blank">Watch Video on YouTube</a>
+
 </body>
 </html>

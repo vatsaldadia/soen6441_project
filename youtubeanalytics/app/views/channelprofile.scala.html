@@ -11,6 +11,11 @@
         white-space: normal;    /* Allows text to wrap normally */
         word-wrap: break-word;  /* Breaks long words if necessary */
     }
+    .video-item {
+				margin: 20px;
+				padding: 15px;
+				border: 2px solid #ddd;
+	}
   </style>
 
 
@@ -18,43 +23,32 @@
 <body>
 <img src="@channel.get("thumbnailDefault")" alt="Thumbnail Default">
 
+<h3><p>Channel Profile: <a href="@channel.get("channelLink")" target="_blank">@channel("title")</a></p></h3>
 
-<h3>Channel Profile</h3>
-<p>Channel: <a href="@channel.get("channelLink")" target="_blank">Visit Channel on YouTube</a></p>
-
-
-
-
-<h2>@channel("title")</h2>
-<p>@channel("description")</p>
-<p>Country: @channel.get("country")</p>
-<h3>Statistics</h3>
-<p>Subscribers: @channel("subscriberCount")</p>
-<p>Total Views: @channel("viewCount")</p>
-<p>Video Count: @channel.get("videoCount")</p>
-
-
+<b>Description: </b>@channel("description") <br>
+<b>Country: </b>@channel.get("country") <br>
+<b>Subscribers:</b> @channel("subscriberCount") <br>
+<b>Total Views: </b>@channel("viewCount") <br>
+<b>Video Count: </b>@channel.get("videoCount")
 
 <h3>Latest 10 Videos</h3>
-<ul>
+
+
+
   @if(channel.containsKey("latestVideos")) {
+
   @for(video <- play.libs.Json.parse(channel.get("latestVideos")).elements()) {
-  <li>
-    <a href="https://www.youtube.com/watch?v=@video.get("videoId").asText()" target="_blank">
-    <img src="@video.get("thumbnailUrl").asText()" alt="Thumbnail" />
-    @video.get("title").asText()
+<div class="video-item">
+    <img src="@video.get("thumbnailUrl").asText()" alt="Thumbnail" /> <br>
+    <b>Title:</b> <a href="https://www.youtube.com/watch?v=@video.get("videoId").asText()" target="_blank">@video.get("title").asText()
+    </a><br>
+    <b>Description:</b> @video.get("description").asText()<br>
+</div>
 
-    </a>
-    <p class="full-description">@video.get("description").asText()</p>
-
-  </li>
   }
   } else {
   <p>No recent videos available.</p>
   }
-</ul>
-
-
 
 </body>
 </html>
