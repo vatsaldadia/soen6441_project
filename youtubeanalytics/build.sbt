@@ -14,9 +14,9 @@ libraryDependencies ++= Seq(
   cacheApi,
   caffeine,
 //  "junit" % "junit" % "4.13.2" % Test,
-  "org.junit.jupiter" % "junit-jupiter-api" % "5.10.0" % Test,
-  "org.junit.jupiter" % "junit-jupiter-engine" % "5.10.0" % Test,
-  "org.junit.vintage" % "junit-vintage-engine" % "5.10.0" % Test,
+//  "org.junit.jupiter" % "junit-jupiter-api" % "5.10.0" % Test,
+//  "org.junit.jupiter" % "junit-jupiter-engine" % "5.10.0" % Test,
+//  "org.junit.vintage" % "junit-vintage-engine" % "5.10.0" % Test,
   "org.mockito" % "mockito-core" % "5.11.0",
   "org.mockito" % "mockito-junit-jupiter" % "5.12.0"
 )

@@ -28,7 +28,6 @@ import static services.WordStatsService.getWordStats;
 public class YoutubeController extends Controller {
 
 	private final WSClient ws;
-	private final WordStatsService wordStatsService;
 	private static final String YOUTUBE_API_KEY =
 		"AIzaSyDjXQxEHYcT9PBsFI6frudaxzd4fNxTWbs";
 	private static final String YOUTUBE_URL =
@@ -45,7 +44,6 @@ public class YoutubeController extends Controller {
 		AsyncCacheApi cache
 	) {
 		this.ws = ws;
-		this.wordStatsService = wordStatsService;
 		this.youtubeService = youtubeService;
 		this.cache = cache;
 	}
@@ -91,6 +89,15 @@ public class YoutubeController extends Controller {
 			},
 			3600
 		); // Cache for 1 hour (3600 seconds)
+
+//		return ws
+//				.url(YOUTUBE_URL + "/search")
+//				.addQueryParameter("part", "snippet")
+//				.addQueryParameter("maxResults", "50")
+//				.addQueryParameter("q", query)
+//				.addQueryParameter("type", "video")
+//				.addQueryParameter("key", YOUTUBE_API_KEY)
+//				.get();
 	}
 
 
