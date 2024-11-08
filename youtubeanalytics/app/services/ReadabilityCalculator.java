@@ -6,6 +6,9 @@ import java.util.List;
 public class ReadabilityCalculator {
 
     public static double calculateGradeAvg(List<Double> grades) {
+        grades.stream().
+                mapToDouble(Double::doubleValue).
+                forEach(System.out::println);
         return grades.stream().
                 mapToDouble(Double::doubleValue).
                 average().
@@ -37,12 +40,12 @@ public class ReadabilityCalculator {
 
     static int countWords(String description) {
         String[] words = description.split("\\s+");
-        return words.length;
+        return words.length != 0 ? words.length : 1;
     }
 
     static int countSentences(String description) {
         String[] sentences = description.split("[.!?]");
-        return sentences.length;
+        return sentences.length != 0 ? sentences.length : 1;
     }
 
     static int countSyllables(String word) {

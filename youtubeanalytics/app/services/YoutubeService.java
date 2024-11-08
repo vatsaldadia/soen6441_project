@@ -58,6 +58,8 @@ public class YoutubeService {
 			ObjectNode modifiedResponse = youtubeResponse.deepCopy();
 			ArrayNode modifiedItems = JsonNodeFactory.instance.arrayNode();
 			List<CompletableFuture<ObjectNode>> futures = new ArrayList<>();
+			List<Double> grades = new ArrayList<>();
+			List<Double> scores = new ArrayList<>();
 
 			for (JsonNode item : items) {
 				ObjectNode videoNode = (ObjectNode) item;
@@ -78,10 +80,12 @@ public class YoutubeService {
 							ReadabilityCalculator.calculateFleschKincaidGradeLevel(
 								description
 							);
+						grades.add(grade);
 						double score =
 							ReadabilityCalculator.calculateFleschReadingScore(
 								description
 							);
+						scores.add(score);
 						double sentimentValue =
 							SentimentAnalyzer.analyzeDescription(description);
 
@@ -110,29 +114,13 @@ public class YoutubeService {
 					.map(future -> future.getNow(null))
 					.forEach(videoNode -> modifiedItems.add(videoNode));
 
-				double gradeAvg = StreamSupport.stream(
-					modifiedItems.spliterator(),
-					false
-				)
-					.mapToDouble(item ->
-						Double.parseDouble(
-							item.get("fleschKincaidGradeLevel").asText()
-						)
-					)
-					.average()
-					.orElse(0.0);
+				double gradeAvg = ReadabilityCalculator.calculateGradeAvg(
+					grades
+				);
 
-				double scoreAvg = StreamSupport.stream(
-					modifiedItems.spliterator(),
-					false
-				)
-					.mapToDouble(item ->
-						Double.parseDouble(
-							item.get("fleschReadingScore").asText()
-						)
-					)
-					.average()
-					.orElse(0.0);
+				double scoreAvg = ReadabilityCalculator.calculateScoreAvg(
+					scores
+				);
 
 				List<String> descriptions = StreamSupport.stream(
 					modifiedItems.spliterator(),
