@@ -1,4 +1,4 @@
-package test.services;
+package services;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -40,5 +40,18 @@ public class WordStatsServiceTest {
 
         assertNull(wordCounts.get("is"));
         assertEquals(Long.valueOf(1), wordCounts.get("test"));
+    }
+
+    @Test
+    public void testGetWordStatsEmptyDescriptions() {
+        // Creating a list with a YoutubeVideo having an empty description
+        YoutubeVideo video = new YoutubeVideo("id1", "title1", "", "url1", "channel1", "date1", null);
+        List<YoutubeVideo> videos = Arrays.asList(video);
+
+        // Calling getWordStats method
+        Map<String, Long> wordCounts = WordStatsService.getWordStats(videos);
+
+        // Verifying the word count map is empty since the description is empty
+        assertTrue(wordCounts.isEmpty());
     }
 }
