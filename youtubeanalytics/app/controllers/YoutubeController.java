@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,253 +15,157 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import models.YoutubeVideo;
+import play.cache.AsyncCacheApi;
 import play.libs.ws.*;
 import play.mvc.*;
 import services.ReadabilityCalculator;
 import services.SentimentAnalyzer;
 import services.WordStatsService;
+import services.YoutubeService;
 
 public class YoutubeController extends Controller {
 
 	private final WSClient ws;
 	private final WordStatsService wordStatsService;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyCRTltXLPxW3IwxMf-WH0BagUipQy_7TuQ";
+		"AIzaSyDjXQxEHYcT9PBsFI6frudaxzd4fNxTWbs";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
+	private final YoutubeService youtubeService;
+	private final AsyncCacheApi cache;
+
 	@Inject
-	public YoutubeController(WSClient ws, WordStatsService wordStatsService) {
+	public YoutubeController(
+		WSClient ws,
+		WordStatsService wordStatsService,
+		YoutubeService youtubeService,
+		AsyncCacheApi cache
+	) {
 		this.ws = ws;
 		this.wordStatsService = wordStatsService;
+		this.youtubeService = youtubeService;
+		this.cache = cache;
 	}
 
 	public Result search() {
 		return ok(views.html.search.render());
 	}
 
-	public CompletionStage<ObjectNode> modifyResponse(
-		ObjectNode youtubeResponse
-	) {
-		if (youtubeResponse.has("items")) {
-			JsonNode items = youtubeResponse.get("items");
-			ObjectNode modifiedResponse = youtubeResponse.deepCopy();
-			ArrayNode modifiedItems = JsonNodeFactory.instance.arrayNode();
-			List<CompletableFuture<ObjectNode>> futures = new ArrayList<>();
-			for (JsonNode item : items) {
-				ObjectNode videoNode = (ObjectNode) item;
-				String videoId = videoNode.get("id").get("videoId").asText();
-				CompletionStage<ObjectNode> future = ws
-					.url(YOUTUBE_URL + "/videos")
-					.addQueryParameter("part", "snippet")
-					.addQueryParameter("id", videoId)
-					.addQueryParameter("key", YOUTUBE_API_KEY)
-					.get()
-					.thenApply(response -> {
-						if (response.getStatus() == 200) {
-							String description = response
-								.asJson()
-								.get("items")
-								.get(0)
-								.get("snippet")
-								.get("description")
-								.asText();
-
-							Double grade =
-								ReadabilityCalculator.calculateFleschKincaidGradeLevel(
-									description
-								);
-							Double score =
-								ReadabilityCalculator.calculateFleschReadingScore(
-									description
-								);
-							double sentimentValue =
-								SentimentAnalyzer.analyzeDescription(
-									description
-								);
-							videoNode.put("description", description);
-							videoNode.put(
-								"fleschKincaidGradeLevel",
-								String.format("%.2f", grade)
-							);
-							videoNode.put(
-								"fleschReadingScore",
-								String.format("%.2f", score)
-							);
-							return videoNode;
-						}
-						return videoNode;
-					});
-				futures.add(future.toCompletableFuture());
-			}
-
-			return CompletableFuture.allOf(
-				futures
-					.stream()
-					.map(f -> f.toCompletableFuture())
-					.toArray(CompletableFuture[]::new)
-			).thenApply(v -> {
-				// First, get all results and add to modifiedItems
-				futures
-					.stream()
-					.map(CompletionStage::toCompletableFuture)
-					.map(future -> future.getNow(null))
-					.forEach(videoNode -> modifiedItems.add(videoNode));
-
-				// Now calculate averages
-				double gradeAvg = StreamSupport.stream(
-					modifiedItems.spliterator(),
-					false
-				)
-					.mapToDouble(item ->
-						Double.parseDouble(
-							item.get("fleschKincaidGradeLevel").asText()
-						)
-					)
-					.average()
-					.orElse(0.0);
-
-				double scoreAvg = StreamSupport.stream(
-					modifiedItems.spliterator(),
-					false
-				)
-					.mapToDouble(item ->
-						Double.parseDouble(
-							item.get("fleschReadingScore").asText()
-						)
-					)
-					.average()
-					.orElse(0.0);
-
-				// Get descriptions for sentiment analysis
-				List<String> descriptions = StreamSupport.stream(
-					modifiedItems.spliterator(),
-					false
-				)
-					.map(item -> item.get("description").asText())
-					.collect(Collectors.toList());
-
-				String sentiment = SentimentAnalyzer.analyzeSentiment(
-					descriptions
-				);
-
-				// Add the calculated values to the response
-				modifiedResponse.put("sentiment", sentiment);
-				modifiedResponse.put(
-					"fleschKincaidGradeLevelAvg",
-					String.format("%.2f", gradeAvg)
-				);
-				modifiedResponse.put(
-					"fleschReadingScoreAvg",
-					String.format("%.2f", scoreAvg)
-				);
-
-				modifiedResponse.put("items", modifiedItems);
-
-				return modifiedResponse;
-			});
-		}
-
-		return CompletableFuture.completedFuture(youtubeResponse);
-	}
-
 	public CompletionStage<Result> searchVideos(String query) {
-		return ws
-			.url(YOUTUBE_URL + "/search")
-			.addQueryParameter("part", "snippet")
-			.addQueryParameter("maxResults", "10")
-			.addQueryParameter("q", query)
-			.addQueryParameter("type", "video")
-			.addQueryParameter("key", YOUTUBE_API_KEY)
-			.get()
-			.thenCompose(response -> {
-				if (response.getStatus() == 200) {
-					return modifyResponse(
-						(ObjectNode) response.asJson()
-					).thenApply(modifiedResponse -> ok(modifiedResponse));
-				} else {
-					return CompletableFuture.completedFuture(
-						internalServerError(
-							"YouTube API error: " + response.getBody()
-						)
-					);
-				}
-			});
+		// Try to fetch from cache first
+
+		// If not cached, perform the API call
+		return searchVideoCall(query).thenCompose(response -> {
+			if (response.getStatus() == 200) {
+				// Modify and return the response as JSON
+				return youtubeService
+					.modifyResponse((ObjectNode) response.asJson())
+					.thenApply(modifiedResponse -> ok(modifiedResponse));
+			} else {
+				return CompletableFuture.completedFuture(
+					internalServerError(
+						"YouTube API error: " + response.getBody()
+					)
+				);
+			}
+		});
 	}
 
-	public Result getWordStats(String query) {
+	public CompletionStage<WSResponse> searchVideoCall(String query) {
+		// Try to fetch from cache first
+		return cache.getOrElseUpdate(
+			query,
+			() -> {
+				// If not cached, perform the API call
+				return ws
+					.url(YOUTUBE_URL + "/search")
+					.addQueryParameter("part", "snippet")
+					.addQueryParameter("maxResults", "50")
+					.addQueryParameter("q", query)
+					.addQueryParameter("type", "video")
+					.addQueryParameter("key", YOUTUBE_API_KEY)
+					.get();
+			},
+			3600
+		); // Cache for 1 hour (3600 seconds)
+	}
+
+	public CompletionStage<Result> getWordStats(String query) {
 		// Fetch the list of videos by search query
-		List<YoutubeVideo> videos = fetchVideosBySearchTerm(query);
+		return fetchVideosBySearchTerm(query).thenApply(r -> {
+			// if (r.getStatus() == 200) {
+			List<YoutubeVideo> videos = r;
+			List<String> allDescriptions = videos
+				.stream()
+				.map(YoutubeVideo::getDescription)
+				.collect(Collectors.toList());
 
+			// Splitting the string into words, then to lowercase, and counting word frequencies
+			Map<String, Long> sortedWordCount =
+				wordStatsService.calculateWordStats(allDescriptions);
+
+			// Passing the sorted word stats map and search query to the view
+			return ok(views.html.wordstats.render(sortedWordCount, query));
+		});
 		// Concatenating all descriptions into a single string
-		List<String> allDescriptions = videos
-			.stream()
-			.map(YoutubeVideo::getDescription)
-			.collect(Collectors.toList());
 
-		// Splitting the string into words, then to lowercase, and counting word frequencies
-		Map<String, Long> sortedWordCount = wordStatsService.calculateWordStats(
-			allDescriptions
-		);
-
-		// Passing the sorted word stats map and search query to the view
-		return ok(views.html.wordstats.render(sortedWordCount, query));
 	}
 
-	private List<YoutubeVideo> fetchVideosBySearchTerm(String query) {
+	private CompletionStage<List<YoutubeVideo>> fetchVideosBySearchTerm(
+		String query
+	) {
 		// Creating an empty list to store the fetched video details
 		List<YoutubeVideo> videoList = new ArrayList<>();
 
-		CompletionStage<JsonNode> responseStage = ws
-			.url(YOUTUBE_URL + "/search")
-			.addQueryParameter("part", "snippet")
-			.addQueryParameter("maxResults", "50")
-			.addQueryParameter("q", query)
-			.addQueryParameter("type", "video")
-			.addQueryParameter("key", YOUTUBE_API_KEY)
-			.get()
-			.thenApply(response -> {
-				if (response.getStatus() == 200) {
-					return response.asJson();
-				} else {
-					return null;
+		return searchVideoCall(query).thenApply(r -> {
+			if (r.getStatus() == 200) {
+				JsonNode response = r.asJson();
+
+				if (response != null && response.has("items")) {
+					JsonNode items = response.get("items");
+
+					for (JsonNode item : items) {
+						JsonNode snippet = item.get("snippet");
+						String videoId = item.get("id").get("videoId").asText();
+						String title = snippet.get("title").asText();
+						String description = snippet
+							.get("description")
+							.asText();
+						String thumbnailUrl = snippet
+							.get("thumbnails")
+							.get("default")
+							.get("url")
+							.asText();
+						String channelTitle = snippet
+							.get("channelTitle")
+							.asText();
+						String publishedAt = snippet
+							.get("publishedAt")
+							.asText();
+						Long viewCount = snippet.has("viewCount")
+							? snippet.get("viewCount").asLong()
+							: 0L;
+
+						// Creating a YoutubeVideo object and add it to the list
+						YoutubeVideo video = new YoutubeVideo(
+							videoId,
+							title,
+							description,
+							thumbnailUrl,
+							channelTitle,
+							publishedAt,
+							viewCount
+						);
+						videoList.add(video);
+					}
 				}
-			});
 
-		JsonNode response = responseStage.toCompletableFuture().join();
-
-		if (response != null && response.has("items")) {
-			JsonNode items = response.get("items");
-
-			for (JsonNode item : items) {
-				JsonNode snippet = item.get("snippet");
-				String videoId = item.get("id").get("videoId").asText();
-				String title = snippet.get("title").asText();
-				String description = snippet.get("description").asText();
-				String thumbnailUrl = snippet
-					.get("thumbnails")
-					.get("default")
-					.get("url")
-					.asText();
-				String channelTitle = snippet.get("channelTitle").asText();
-				String publishedAt = snippet.get("publishedAt").asText();
-				Long viewCount = snippet.has("viewCount") ? snippet.get("viewCount").asLong() : 0L;
-
-				// Creating a YoutubeVideo object and add it to the list
-				YoutubeVideo video = new YoutubeVideo(
-					videoId,
-					title,
-					description,
-					thumbnailUrl,
-					channelTitle,
-					publishedAt,
-					viewCount
-				);
-				videoList.add(video);
+				return videoList;
+			} else {
+				return null;
 			}
-		}
-
-		return videoList;
+		});
 	}
 
 	public CompletionStage<Result> getChannelProfile(String channelId) {
@@ -481,56 +386,80 @@ public class YoutubeController extends Controller {
 				}
 			});
 	}
+
 	public CompletionStage<Result> getVideoDetails(String video_id) {
-		return ws
-				.url(YOUTUBE_URL + "/videos")
-				.addQueryParameter("part", "snippet,contentDetails,statistics") // Get snippet (title, description), content details (tags), statistics (view count)
-				.addQueryParameter("id", video_id)
-				.addQueryParameter("key", YOUTUBE_API_KEY)
-				.get()
-				.thenCompose(response -> {
-					if (response.getStatus() == 200) {
-						JsonNode videoData = response.asJson();
-						JsonNode items = videoData.get("items");
+		return youtubeService
+			.getVideo(video_id)
+			.thenCompose(response -> {
+				if (response.getStatus() == 200) {
+					JsonNode videoData = response.asJson();
+					JsonNode items = videoData.get("items");
 
-						if (items != null && items.size() > 0) {
-							JsonNode videoInfo = items.get(0);
-							String title = videoInfo.get("snippet").get("title").asText();
-							String description = videoInfo.get("snippet").get("description").asText();
-							String thumbnailUrl = videoInfo.get("snippet").get("thumbnails").get("default").get("url").asText();
-							String channelTitle = videoInfo.get("snippet").get("channelTitle").asText();
-							String publishedAt = videoInfo.get("snippet").get("publishedAt").asText();
-							Long viewCount = videoInfo.get("statistics").get("viewCount").asLong();
-							ArrayNode tagsNode = (ArrayNode) videoInfo.get("snippet").get("tags");
+					if (items != null && items.size() > 0) {
+						JsonNode videoInfo = items.get(0);
+						String title = videoInfo
+							.get("snippet")
+							.get("title")
+							.asText();
+						String description = videoInfo
+							.get("snippet")
+							.get("description")
+							.asText();
+						String thumbnailUrl = videoInfo
+							.get("snippet")
+							.get("thumbnails")
+							.get("default")
+							.get("url")
+							.asText();
+						String channelTitle = videoInfo
+							.get("snippet")
+							.get("channelTitle")
+							.asText();
+						String publishedAt = videoInfo
+							.get("snippet")
+							.get("publishedAt")
+							.asText();
+						Long viewCount = videoInfo
+							.get("statistics")
+							.get("viewCount")
+							.asLong();
+						ArrayNode tagsNode = (ArrayNode) videoInfo
+							.get("snippet")
+							.get("tags");
 
-							List<String> tags = new ArrayList<>();
-							if (tagsNode != null) {
-								for (JsonNode tagNode : tagsNode) {
-									tags.add(tagNode.asText());
-								}
+						List<String> tags = new ArrayList<>();
+						if (tagsNode != null) {
+							for (JsonNode tagNode : tagsNode) {
+								tags.add(tagNode.asText());
 							}
-
-							YoutubeVideo video = new YoutubeVideo(
-									video_id,
-									title,
-									description,
-									thumbnailUrl,
-									channelTitle,
-									publishedAt,
-									viewCount
-							);
-
-							return CompletableFuture.completedFuture(
-									ok(views.html.videoDetails.render(video, tags))
-							);
-						} else {
-							return CompletableFuture.completedFuture(notFound("Video not found"));
 						}
+
+						YoutubeVideo video = new YoutubeVideo(
+							video_id,
+							title,
+							description,
+							thumbnailUrl,
+							channelTitle,
+							publishedAt,
+							viewCount
+						);
+
+						return CompletableFuture.completedFuture(
+							ok(views.html.videoDetails.render(video, tags))
+						);
 					} else {
 						return CompletableFuture.completedFuture(
-								internalServerError("Error fetching video details: " + response.getBody())
+							notFound("Video not found")
 						);
 					}
-				});
+				} else {
+					return CompletableFuture.completedFuture(
+						internalServerError(
+							"Error fetching video details: " +
+							response.getBody()
+						)
+					);
+				}
+			});
 	}
 }
