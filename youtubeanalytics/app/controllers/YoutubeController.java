@@ -81,7 +81,7 @@ public class YoutubeController extends Controller {
 				return ws
 					.url(YOUTUBE_URL + "/search")
 					.addQueryParameter("part", "snippet")
-					.addQueryParameter("maxResults", "10")
+					.addQueryParameter("maxResults", "50")
 					.addQueryParameter("q", query)
 					.addQueryParameter("type", "video")
 					.addQueryParameter("key", YOUTUBE_API_KEY)

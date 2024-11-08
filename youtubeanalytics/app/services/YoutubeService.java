@@ -106,9 +106,11 @@ public class YoutubeService {
 			).thenApply(v -> {
 				futures
 					.stream()
-					.map(CompletableFuture::join)
-					.forEach(modifiedItems::add);
+					.map(CompletionStage::toCompletableFuture)
+					.map(future -> future.getNow(null))
+					.forEach(videoNode -> modifiedItems.add(videoNode));
 
+					
 				double gradeAvg = StreamSupport.stream(
 					modifiedItems.spliterator(),
 					false

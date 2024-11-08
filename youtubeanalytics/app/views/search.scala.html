@@ -60,7 +60,7 @@
 							</body>`,
 
 						);
-						data.items.forEach((item) => {
+						data.items.slice(0, 10).forEach((item) => {
 							// console.log(item);
 							const videoId = item.id.videoId;
 							const snippet = item.snippet;
