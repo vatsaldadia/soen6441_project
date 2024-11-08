@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.inject.Inject;
 import play.cache.AsyncCacheApi;
+import play.libs.ws.*;
 import play.libs.ws.WSClient;
 
 public class YoutubeService {
@@ -29,6 +30,26 @@ public class YoutubeService {
 		this.cache = cache;
 	}
 
+	public CompletionStage<WSResponse> getVideo(String video_id) {
+		// Try to fetch from cache first
+		return cache.getOrElseUpdate(
+			video_id,
+			() -> {
+				// If not cached, perform the API call
+				return ws
+					.url(YOUTUBE_URL + "/videos")
+					.addQueryParameter(
+						"part",
+						"snippet,contentDetails,statistics"
+					) // Get snippet (title, description), content details (tags), statistics (view count)
+					.addQueryParameter("id", video_id)
+					.addQueryParameter("key", YOUTUBE_API_KEY)
+					.get();
+			},
+			3600
+		); // Cache for 1 hour (3600 seconds)
+	}
+
 	public CompletionStage<ObjectNode> modifyResponse(
 		ObjectNode youtubeResponse
 	) {
@@ -41,48 +62,42 @@ public class YoutubeService {
 			for (JsonNode item : items) {
 				ObjectNode videoNode = (ObjectNode) item;
 				String videoId = videoNode.get("id").get("videoId").asText();
-				CompletionStage<ObjectNode> future = ws
-					.url(YOUTUBE_URL + "/videos")
-					.addQueryParameter("part", "snippet")
-					.addQueryParameter("id", videoId)
-					.addQueryParameter("key", YOUTUBE_API_KEY)
-					.get()
-					.thenApply(response -> {
-						if (response.getStatus() == 200) {
-							String description = response
-								.asJson()
-								.get("items")
-								.get(0)
-								.get("snippet")
-								.get("description")
-								.asText();
+				CompletionStage<ObjectNode> future = getVideo(
+					videoId
+				).thenApply(response -> {
+					if (response.getStatus() == 200) {
+						String description = response
+							.asJson()
+							.get("items")
+							.get(0)
+							.get("snippet")
+							.get("description")
+							.asText();
 
-							double grade =
-								ReadabilityCalculator.calculateFleschKincaidGradeLevel(
-									description
-								);
-							double score =
-								ReadabilityCalculator.calculateFleschReadingScore(
-									description
-								);
-							double sentimentValue =
-								SentimentAnalyzer.analyzeDescription(
-									description
-								);
+						double grade =
+							ReadabilityCalculator.calculateFleschKincaidGradeLevel(
+								description
+							);
+						double score =
+							ReadabilityCalculator.calculateFleschReadingScore(
+								description
+							);
+						double sentimentValue =
+							SentimentAnalyzer.analyzeDescription(description);
 
-							videoNode.put("description", description);
-							videoNode.put(
-								"fleschKincaidGradeLevel",
-								String.format("%.2f", grade)
-							);
-							videoNode.put(
-								"fleschReadingScore",
-								String.format("%.2f", score)
-							);
-							return videoNode;
-						}
+						videoNode.put("description", description);
+						videoNode.put(
+							"fleschKincaidGradeLevel",
+							String.format("%.2f", grade)
+						);
+						videoNode.put(
+							"fleschReadingScore",
+							String.format("%.2f", score)
+						);
 						return videoNode;
-					});
+					}
+					return videoNode;
+				});
 				futures.add(future.toCompletableFuture());
 			}
 
