@@ -20,7 +20,7 @@ public class YoutubeService {
 	private final WSClient ws;
 	private final AsyncCacheApi cache;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyCRTltXLPxW3IwxMf-WH0BagUipQy_7TuQ";
+		"AIzaSyDjXQxEHYcT9PBsFI6frudaxzd4fNxTWbs";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
@@ -110,7 +110,6 @@ public class YoutubeService {
 					.map(future -> future.getNow(null))
 					.forEach(videoNode -> modifiedItems.add(videoNode));
 
-					
 				double gradeAvg = StreamSupport.stream(
 					modifiedItems.spliterator(),
 					false

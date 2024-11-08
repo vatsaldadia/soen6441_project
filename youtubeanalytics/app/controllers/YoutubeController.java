@@ -28,7 +28,7 @@ public class YoutubeController extends Controller {
 	private final WSClient ws;
 	private final WordStatsService wordStatsService;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyCRTltXLPxW3IwxMf-WH0BagUipQy_7TuQ";
+		"AIzaSyDjXQxEHYcT9PBsFI6frudaxzd4fNxTWbs";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
