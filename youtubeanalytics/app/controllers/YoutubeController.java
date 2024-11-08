@@ -52,150 +52,251 @@ public class YoutubeController extends Controller {
 		return ok(views.html.search.render());
 	}
 
+	// public CompletionStage<Result> searchVideos(String query) {
+	// 	// Attempt to fetch from cache or perform the API call if not cached
+
+	// 	return ws
+	// 		.url(YOUTUBE_URL + "/search")
+	// 		.addQueryParameter("part", "snippet")
+	// 		.addQueryParameter("maxResults", "10")
+	// 		.addQueryParameter("q", query)
+	// 		.addQueryParameter("type", "video")
+	// 		.addQueryParameter("key", YOUTUBE_API_KEY)
+	// 		.get()
+	// 		.thenCompose(response -> {
+	// 			if (response.getStatus() == 200) {
+	// 				// Modify and return the response as JSON
+	// 				return youtubeService
+	// 					.modifyResponse((ObjectNode) response.asJson())
+	// 					.thenApply(modifiedResponse -> ok(modifiedResponse));
+	// 			} else {
+	// 				return CompletableFuture.completedFuture(
+	// 					internalServerError(
+	// 						"YouTube API error: " + response.getBody()
+	// 					)
+	// 				);
+	// 			}
+	// 		});
+	// }
+	//
+	//
+	// public CompletionStage<Result> searchVideos(String query) {
+	// 	// Try to fetch from cache first
+	// 	return cache.getOrElseUpdate(
+	// 		query,
+	// 		() -> {
+	// 			// If not cached, perform the API call
+	// 			return searchVideoCall(query).thenCompose(response -> {
+	// 				if (response.getStatus() == 200) {
+	// 					// Modify and return the response as JSON
+	// 					return youtubeService
+	// 						.modifyResponse((ObjectNode) response.asJson())
+	// 						.thenApply(modifiedResponse -> ok(modifiedResponse)
+	// 						);
+	// 				} else {
+	// 					return CompletableFuture.completedFuture(
+	// 						internalServerError(
+	// 							"YouTube API error: " + response.getBody()
+	// 						)
+	// 					);
+	// 				}
+	// 			});
+	// 		},
+	// 		3600
+	// 	); // Cache for 1 hour (3600 seconds)
+	// }
 	public CompletionStage<Result> searchVideos(String query) {
-		// Attempt to fetch from cache or perform the API call if not cached
+		// Try to fetch from cache first
 
-		return ws
-			.url(YOUTUBE_URL + "/search")
-			.addQueryParameter("part", "snippet")
-			.addQueryParameter("maxResults", "10")
-			.addQueryParameter("q", query)
-			.addQueryParameter("type", "video")
-			.addQueryParameter("key", YOUTUBE_API_KEY)
-			.get()
-			.thenCompose(response -> {
-				if (response.getStatus() == 200) {
-					// Modify and return the response as JSON
-					return youtubeService
-						.modifyResponse((ObjectNode) response.asJson())
-						.thenApply(modifiedResponse -> ok(modifiedResponse));
-				} else {
-					return CompletableFuture.completedFuture(
-						internalServerError(
-							"YouTube API error: " + response.getBody()
-						)
-					);
-				}
-			});
+		// If not cached, perform the API call
+		return searchVideoCall(query).thenCompose(response -> {
+			if (response.getStatus() == 200) {
+				// Modify and return the response as JSON
+				return youtubeService
+					.modifyResponse((ObjectNode) response.asJson())
+					.thenApply(modifiedResponse -> ok(modifiedResponse));
+			} else {
+				return CompletableFuture.completedFuture(
+					internalServerError(
+						"YouTube API error: " + response.getBody()
+					)
+				);
+			}
+		});
 	}
 
-	public CompletionStage<ObjectNode> getCachedYoutubeResponse(String query) {
-		String cacheKey = "youtube_response_" + query;
-
-		// Check if data is cached
-		return cache
-			.get(cacheKey)
-			.thenCompose(cachedResponse -> {
-				if (cachedResponse != null) {
-					// If cached data exists, return it directly
-					return CompletableFuture.completedFuture(
-						(ObjectNode) cachedResponse
-					);
-				} else {
-					// If no cached data exists, fetch it from the YouTube API
-					return fetchYoutubeData(query).thenApply(response -> {
-						// Cache the response before returning it
-						cache.set(cacheKey, response, 3600); // Cache for 1 hour (3600 seconds)
-						return response;
-					});
-				}
-			});
+	public CompletionStage<WSResponse> searchVideoCall(String query) {
+		// Try to fetch from cache first
+		return cache.getOrElseUpdate(
+			query,
+			() -> {
+				// If not cached, perform the API call
+				return ws
+					.url(YOUTUBE_URL + "/search")
+					.addQueryParameter("part", "snippet")
+					.addQueryParameter("maxResults", "10")
+					.addQueryParameter("q", query)
+					.addQueryParameter("type", "video")
+					.addQueryParameter("key", YOUTUBE_API_KEY)
+					.get();
+			},
+			3600
+		); // Cache for 1 hour (3600 seconds)
 	}
 
-	private CompletionStage<ObjectNode> fetchYoutubeData(String query) {
-		return ws
-			.url(YOUTUBE_URL + "/search")
-			.addQueryParameter("part", "snippet")
-			.addQueryParameter("maxResults", "10")
-			.addQueryParameter("q", query)
-			.addQueryParameter("type", "video")
-			.addQueryParameter("key", YOUTUBE_API_KEY)
-			.get()
-			.thenApply(response -> {
-				if (response.getStatus() == 200) {
-					return response;
-				} else {
-					// Handle error or return a default response
-					return null;
-				}
-			});
-	}
+	// public CompletionStage<ObjectNode> getCachedYoutubeResponse(String query) {
+	// 	String cacheKey = "youtube_response_" + query;
 
-	public Result getWordStats(String query) {
+	// 	// Check if data is cached
+	// 	return cache
+	// 		.get(cacheKey)
+	// 		.thenCompose(cachedResponse -> {
+	// 			if (cachedResponse != null) {
+	// 				// If cached data exists, return it directly
+	// 				return CompletableFuture.completedFuture(
+	// 					(ObjectNode) cachedResponse
+	// 				);
+	// 			} else {
+	// 				// If no cached data exists, fetch it from the YouTube API
+	// 				return fetchYoutubeData(query).thenApply(response -> {
+	// 					// Cache the response before returning it
+	// 					cache.set(cacheKey, response, 3600); // Cache for 1 hour (3600 seconds)
+	// 					return response;
+	// 				});
+	// 			}
+	// 		});
+	// }
+
+	// private CompletionStage<ObjectNode> fetchYoutubeData(String query) {
+	// 	return ws
+	// 		.url(YOUTUBE_URL + "/search")
+	// 		.addQueryParameter("part", "snippet")
+	// 		.addQueryParameter("maxResults", "10")
+	// 		.addQueryParameter("q", query)
+	// 		.addQueryParameter("type", "video")
+	// 		.addQueryParameter("key", YOUTUBE_API_KEY)
+	// 		.get()
+	// 		.thenApply(response -> {
+	// 			if (response.getStatus() == 200) {
+	// 				return response;
+	// 			} else {
+	// 				// Handle error or return a default response
+	// 				return null;
+	// 			}
+	// 		});
+	// }
+
+	public CompletionStage<Result> getWordStats(String query) {
 		// Fetch the list of videos by search query
-		List<YoutubeVideo> videos = fetchVideosBySearchTerm(query);
+		return fetchVideosBySearchTerm(query).thenApply(r -> {
+			// if (r.getStatus() == 200) {
+			List<YoutubeVideo> videos = r;
+			List<String> allDescriptions = videos
+				.stream()
+				.map(YoutubeVideo::getDescription)
+				.collect(Collectors.toList());
 
+			// Splitting the string into words, then to lowercase, and counting word frequencies
+			Map<String, Long> sortedWordCount =
+				wordStatsService.calculateWordStats(allDescriptions);
+
+			// Passing the sorted word stats map and search query to the view
+			return ok(views.html.wordstats.render(sortedWordCount, query));
+		});
 		// Concatenating all descriptions into a single string
-		List<String> allDescriptions = videos
-			.stream()
-			.map(YoutubeVideo::getDescription)
-			.collect(Collectors.toList());
 
-		// Splitting the string into words, then to lowercase, and counting word frequencies
-		Map<String, Long> sortedWordCount = wordStatsService.calculateWordStats(
-			allDescriptions
-		);
-
-		// Passing the sorted word stats map and search query to the view
-		return ok(views.html.wordstats.render(sortedWordCount, query));
 	}
 
-	private List<YoutubeVideo> fetchVideosBySearchTerm(String query) {
+	private CompletionStage<List<YoutubeVideo>> fetchVideosBySearchTerm(
+		String query
+	) {
 		// Creating an empty list to store the fetched video details
 		List<YoutubeVideo> videoList = new ArrayList<>();
 
-		CompletionStage<JsonNode> responseStage = ws
-			.url(YOUTUBE_URL + "/search")
-			.addQueryParameter("part", "snippet")
-			.addQueryParameter("maxResults", "50")
-			.addQueryParameter("q", query)
-			.addQueryParameter("type", "video")
-			.addQueryParameter("key", YOUTUBE_API_KEY)
-			.get()
-			.thenApply(response -> {
-				if (response.getStatus() == 200) {
-					return response.asJson();
-				} else {
-					return null;
+		return searchVideoCall(query).thenApply(r -> {
+			if (r.getStatus() == 200) {
+				JsonNode response = r.asJson();
+
+				if (response != null && response.has("items")) {
+					JsonNode items = response.get("items");
+
+					for (JsonNode item : items) {
+						JsonNode snippet = item.get("snippet");
+						String videoId = item.get("id").get("videoId").asText();
+						String title = snippet.get("title").asText();
+						String description = snippet
+							.get("description")
+							.asText();
+						String thumbnailUrl = snippet
+							.get("thumbnails")
+							.get("default")
+							.get("url")
+							.asText();
+						String channelTitle = snippet
+							.get("channelTitle")
+							.asText();
+						String publishedAt = snippet
+							.get("publishedAt")
+							.asText();
+						Long viewCount = snippet.has("viewCount")
+							? snippet.get("viewCount").asLong()
+							: 0L;
+
+						// Creating a YoutubeVideo object and add it to the list
+						YoutubeVideo video = new YoutubeVideo(
+							videoId,
+							title,
+							description,
+							thumbnailUrl,
+							channelTitle,
+							publishedAt,
+							viewCount
+						);
+						videoList.add(video);
+					}
 				}
-			});
 
-		JsonNode response = responseStage.toCompletableFuture().join();
-
-		if (response != null && response.has("items")) {
-			JsonNode items = response.get("items");
-
-			for (JsonNode item : items) {
-				JsonNode snippet = item.get("snippet");
-				String videoId = item.get("id").get("videoId").asText();
-				String title = snippet.get("title").asText();
-				String description = snippet.get("description").asText();
-				String thumbnailUrl = snippet
-					.get("thumbnails")
-					.get("default")
-					.get("url")
-					.asText();
-				String channelTitle = snippet.get("channelTitle").asText();
-				String publishedAt = snippet.get("publishedAt").asText();
-				Long viewCount = snippet.has("viewCount")
-					? snippet.get("viewCount").asLong()
-					: 0L;
-
-				// Creating a YoutubeVideo object and add it to the list
-				YoutubeVideo video = new YoutubeVideo(
-					videoId,
-					title,
-					description,
-					thumbnailUrl,
-					channelTitle,
-					publishedAt,
-					viewCount
-				);
-				videoList.add(video);
+				return videoList;
+			} else {
+				return null;
 			}
-		}
+		});
+		// JsonNode response = responseStage.toCompletableFuture().join();
 
-		return videoList;
+		// if (response != null && response.has("items")) {
+		// 	JsonNode items = response.get("items");
+
+		// 	for (JsonNode item : items) {
+		// 		JsonNode snippet = item.get("snippet");
+		// 		String videoId = item.get("id").get("videoId").asText();
+		// 		String title = snippet.get("title").asText();
+		// 		String description = snippet.get("description").asText();
+		// 		String thumbnailUrl = snippet
+		// 			.get("thumbnails")
+		// 			.get("default")
+		// 			.get("url")
+		// 			.asText();
+		// 		String channelTitle = snippet.get("channelTitle").asText();
+		// 		String publishedAt = snippet.get("publishedAt").asText();
+		// 		Long viewCount = snippet.has("viewCount")
+		// 			? snippet.get("viewCount").asLong()
+		// 			: 0L;
+
+		// 		// Creating a YoutubeVideo object and add it to the list
+		// 		YoutubeVideo video = new YoutubeVideo(
+		// 			videoId,
+		// 			title,
+		// 			description,
+		// 			thumbnailUrl,
+		// 			channelTitle,
+		// 			publishedAt,
+		// 			viewCount
+		// 		);
+		// 		videoList.add(video);
+		// 	}
+		// }
+
+		// return videoList;
 	}
 
 	public CompletionStage<Result> getChannelProfile(String channelId) {
