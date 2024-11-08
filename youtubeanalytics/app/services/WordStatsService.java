@@ -1,6 +1,7 @@
 package services;
 
 import java.util.*;
+import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -19,7 +20,7 @@ public class WordStatsService {
      * @param descriptions List of video descriptions
      * @return Sorted map of word frequencies
      */
-    public Map<String, Long> calculateWordStats(List<String> descriptions) {
+    public static Map<String, Long> calculateWordStats(List<String> descriptions) {
         // Concatenate all descriptions into a single string
         String allDescriptions = descriptions.stream()
                 .collect(Collectors.joining(" "));
@@ -42,4 +43,19 @@ public class WordStatsService {
                         (e1, e2) -> e1, LinkedHashMap::new
                 ));
     }
+
+    public static Map<String, Long> getWordStats(List<models.YoutubeVideo> videos) {
+
+        List<String> allDescriptions = videos
+                .stream()
+                .map(models.YoutubeVideo::getDescription)
+                .collect(Collectors.toList());
+
+        // Splitting the string into words, then to lowercase, and counting word frequencies
+        Map<String, Long> sortedWordCount =
+                calculateWordStats(allDescriptions);
+
+        // Passing the sorted word stats map and search query to the view
+        return sortedWordCount;
+    };
 }

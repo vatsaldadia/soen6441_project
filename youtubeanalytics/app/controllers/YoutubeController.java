@@ -23,6 +23,8 @@ import services.SentimentAnalyzer;
 import services.WordStatsService;
 import services.YoutubeService;
 
+import static services.WordStatsService.getWordStats;
+
 public class YoutubeController extends Controller {
 
 	private final WSClient ws;
@@ -91,30 +93,8 @@ public class YoutubeController extends Controller {
 		); // Cache for 1 hour (3600 seconds)
 	}
 
-	public CompletionStage<Result> getWordStats(String query) {
-		// Fetch the list of videos by search query
-		return fetchVideosBySearchTerm(query).thenApply(r -> {
-			// if (r.getStatus() == 200) {
-			List<YoutubeVideo> videos = r;
-			List<String> allDescriptions = videos
-				.stream()
-				.map(YoutubeVideo::getDescription)
-				.collect(Collectors.toList());
 
-			// Splitting the string into words, then to lowercase, and counting word frequencies
-			Map<String, Long> sortedWordCount =
-				wordStatsService.calculateWordStats(allDescriptions);
-
-			// Passing the sorted word stats map and search query to the view
-			return ok(views.html.wordstats.render(sortedWordCount, query));
-		});
-		// Concatenating all descriptions into a single string
-
-	}
-
-	private CompletionStage<List<YoutubeVideo>> fetchVideosBySearchTerm(
-		String query
-	) {
+	public CompletionStage<Result> fetchVideosBySearchTerm(String query) {
 		// Creating an empty list to store the fetched video details
 		List<YoutubeVideo> videoList = new ArrayList<>();
 
@@ -161,7 +141,7 @@ public class YoutubeController extends Controller {
 					}
 				}
 
-				return videoList;
+				return ok(views.html.wordstats.render(getWordStats(videoList), query));
 			} else {
 				return null;
 			}
