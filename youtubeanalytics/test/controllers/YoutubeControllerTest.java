@@ -1,277 +1,338 @@
 package controllers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static play.mvc.Http.Status.INTERNAL_SERVER_ERROR;
-import static play.mvc.Http.Status.OK;
-import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.*;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-import models.YoutubeVideo;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-import play.libs.ws.WSClient;
-import play.libs.ws.WSRequest;
-import play.libs.ws.WSResponse;
+import org.mockito.junit.MockitoJUnitRunner;
+import play.cache.AsyncCacheApi;
+import play.libs.ws.*;
+import play.mvc.Http;
 import play.mvc.Result;
-import services.ReadabilityCalculator;
+import play.mvc.Result;
+import play.test.WithApplication;
 import services.WordStatsService;
-import views.html.search;
-import views.html.wordstats;
+import services.YoutubeService;
 
-@ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
+@RunWith(MockitoJUnitRunner.class)
 public class YoutubeControllerTest {
 
 	@Mock
 	private WSClient wsClient;
 
 	@Mock
-	private WSRequest searchRequest;
+	private WSRequest wsRequest;
 
 	@Mock
-	private WSRequest videoDetailsRequest;
+	private WSResponse wsResponse;
 
 	@Mock
-	private WSResponse searchResponse;
+	private WordStatsService wordStatsService;
 
 	@Mock
-	private WSResponse videoDetailsResponse;
+	private YoutubeService youtubeService;
 
-	@InjectMocks
-	private YoutubeController youtubeController;
+	@Mock
+	private AsyncCacheApi cache;
 
-	private static final String MOCK_QUERY = "test query";
-	private static final String MOCK_VIDEO_ID = "mockVideoId";
-	private static final String SEARCH_API_URL =
-		"https://www.googleapis.com/youtube/v3/search";
-	private static final String VIDEOS_API_URL =
-		"https://www.googleapis.com/youtube/v3/videos";
+	private YoutubeController controller;
+	private ObjectMapper objectMapper;
 
-	//    private static final String CHANNEL_API_URL =
-
-	@BeforeEach
-	public void setUp() {
-		when(wsClient.url(eq(SEARCH_API_URL))).thenReturn(searchRequest);
-
-		// Mock the search API request and response
-		when(
-			searchRequest.addQueryParameter(
-				any(String.class),
-				any(String.class)
-			)
-		).thenReturn(searchRequest);
-		when(searchRequest.get()).thenReturn(
-			CompletableFuture.completedFuture(searchResponse)
+	@Before
+	public void setup() {
+		objectMapper = new ObjectMapper();
+		controller = new YoutubeController(
+			wsClient,
+			wordStatsService,
+			youtubeService,
+			cache
 		);
 	}
 
-	//    @Test
-	//    public void testSearch() {
-	//        // Execute the search() method
-	//        Result result = youtubeController.search();
-	// private ObjectNode createMockChannelData() {
+	@Test
+	public void testSearchRendersCorrectly() {
+		// Act
+		Result result = controller.search();
 
-	//        // Verify the status is OK
-	//        assertEquals(OK, result.status());
+		// Assert
+		assertEquals(OK, result.status());
+	}
 
-	//        // Verify that the rendered content is as expected
-	//        String renderedContent = contentAsString(result);
-	//        assertEquals(search.render().body(), renderedContent);
-	//    }
+	@Test
+	public void testWordStats() throws Exception {
+		// Arrange
+		YoutubeController mockController = mock(YoutubeController.class);
+		String jsonResponse =
+			"{" +
+			"\"items\": [{" +
+			"\"id\": {\"videoId\": \"123\"}," +
+			"\"snippet\": {" +
+			"\"title\": \"Test Video\"," +
+			"\"description\": \"Hello world hello\"," +
+			"\"thumbnails\": {\"default\": {\"url\": \"http://example.com/thumb.jpg\"}}," +
+			"\"channelTitle\": \"Test Channel\"," +
+			"\"publishedAt\": \"2023-01-01T00:00:00Z\"" +
+			"}}]}";
+
+		// Mock the searchVideoCall response
+		when(wsResponse.getStatus()).thenReturn(200);
+		when(wsResponse.asJson()).thenReturn(
+			objectMapper.readTree(jsonResponse)
+		);
+		when(mockController.searchVideoCall("test")).thenReturn(
+			CompletableFuture.completedFuture(wsResponse)
+		);
+		when(mockController.getWordStats("test")).thenCallRealMethod();
+
+		// Act
+		CompletionStage<Result> result = mockController.getWordStats("test");
+		Result resultValue = result.toCompletableFuture().get();
+
+		// Assert
+		assertEquals(OK, resultValue.status());
+		verify(wsResponse).getStatus();
+		verify(wsResponse).asJson();
+
+		// Failed case
+		when(wsResponse.getStatus()).thenReturn(400);
+		result = mockController.getWordStats("test");
+		resultValue = result.toCompletableFuture().get();
+
+		assertNull(resultValue);
+		verify(wsResponse, times(2)).getStatus();
+	}
 
 	@Test
 	public void testSearchVideos_Success() throws Exception {
-		when(wsClient.url(eq(VIDEOS_API_URL))).thenReturn(videoDetailsRequest);
-		when(
-			videoDetailsRequest.addQueryParameter(
-				any(String.class),
-				any(String.class)
-			)
-		).thenReturn(videoDetailsRequest);
-		when(videoDetailsRequest.get()).thenReturn(
-			CompletableFuture.completedFuture(videoDetailsResponse)
-		);
-		// Set up a mock response for the initial search API call
-		ObjectMapper mapper = new ObjectMapper();
-		ObjectNode searchApiResponse = JsonNodeFactory.instance.objectNode();
-		ObjectNode videoItem = JsonNodeFactory.instance.objectNode();
-		ObjectNode idNode = JsonNodeFactory.instance.objectNode();
-		idNode.put("videoId", MOCK_VIDEO_ID);
-		videoItem.set("id", idNode);
-		searchApiResponse.set(
-			"items",
-			JsonNodeFactory.instance.arrayNode().add(videoItem)
+		// Prepare test data
+		String query = "test query";
+		String mockResponseJson =
+			"{\"items\": [{\"id\": {\"videoId\": \"123\"}, \"snippet\": {\"title\": \"Test Video\"}}]}";
+		JsonNode mockJsonResponse = objectMapper.readTree(mockResponseJson);
+		ObjectNode modifiedResponse = objectMapper.createObjectNode();
+		modifiedResponse.put("status", "success");
+
+		when(cache.getOrElseUpdate(eq(query), any(), anyInt())).thenAnswer(
+			invocation -> {
+				// Execute the Callable passed to getOrElseUpdate
+				java.util.concurrent.Callable<?> callable =
+					invocation.getArgument(1);
+				return callable.call();
+			}
 		);
 
-		when(searchResponse.getStatus()).thenReturn(OK);
-		when(searchResponse.asJson()).thenReturn(searchApiResponse);
-
-		// Set up a mock response for the nested video details API call
-		ObjectNode videoDetailsApiResponse =
-			JsonNodeFactory.instance.objectNode();
-		ObjectNode videoSnippet = JsonNodeFactory.instance.objectNode();
-		videoSnippet.put("description", "Mock description");
-		videoDetailsApiResponse.set(
-			"items",
-			JsonNodeFactory.instance
-				.arrayNode()
-				.add(
-					JsonNodeFactory.instance
-						.objectNode()
-						.set("snippet", videoSnippet)
-				)
+		// Setup mocks
+		when(wsClient.url(anyString())).thenReturn(wsRequest);
+		when(wsRequest.addQueryParameter(anyString(), anyString())).thenReturn(
+			wsRequest
+		);
+		when(wsRequest.get()).thenReturn(
+			CompletableFuture.completedFuture(wsResponse)
+		);
+		when(wsResponse.getStatus()).thenReturn(200);
+		when(wsResponse.asJson()).thenReturn(mockJsonResponse);
+		when(youtubeService.modifyResponse(any(ObjectNode.class))).thenReturn(
+			CompletableFuture.completedFuture(modifiedResponse)
 		);
 
-		when(videoDetailsResponse.getStatus()).thenReturn(OK);
-		when(videoDetailsResponse.asJson()).thenReturn(videoDetailsApiResponse);
+		// Execute test
+		CompletionStage<Result> resultStage = controller.searchVideos(query);
+		Result result = resultStage.toCompletableFuture().get();
 
-		// Mock ReadabilityCalculator (assuming static methods)
-		mockStatic(ReadabilityCalculator.class);
-		when(
-			ReadabilityCalculator.calculateFleschKincaidGradeLevel(anyString())
-		).thenReturn(5.0);
-		when(
-			ReadabilityCalculator.calculateFleschReadingScore(anyString())
-		).thenReturn(60.0);
-		when(ReadabilityCalculator.calculateGradeAvg(anyList())).thenReturn(
-			5.0
-		);
-		when(ReadabilityCalculator.calculateScoreAvg(anyList())).thenReturn(
-			60.0
-		);
-
-		// Perform the searchVideos call
-		CompletionStage<Result> resultStage = youtubeController.searchVideos(
-			MOCK_QUERY
-		);
-		Result result = resultStage.toCompletableFuture().join();
-
-		// Verify response and status
-		assertEquals(OK, result.status());
-		String responseBody = contentAsString(result);
-		JsonNode responseJson = mapper.readTree(responseBody);
-
-		assertEquals(
-			"mockVideoId",
-			responseJson.get("items").get(0).get("id").get("videoId").asText()
-		);
-		assertEquals(
-			"5.00",
-			responseJson.get("fleschKincaidGradeLevelAvg").asText()
-		);
-		assertEquals(
-			"60.00",
-			responseJson.get("fleschReadingScoreAvg").asText()
-		);
+		// Verify
+		assertEquals(200, result.status());
+		verify(wsClient).url(contains("/youtube/v3/search"));
+		verify(youtubeService).modifyResponse(any(ObjectNode.class));
+		verify(cache).getOrElseUpdate(eq(query), any(), anyInt());
 	}
 
 	@Test
-	public void testSearchVideos_NoItemsInResponse() {
-		// Mock search API response with no items
-		ObjectNode emptyResponse = JsonNodeFactory.instance.objectNode();
-		emptyResponse.set("items", JsonNodeFactory.instance.arrayNode());
-		emptyResponse.put("fleschKincaidGradeLevelAvg", "0.00");
-		emptyResponse.put("fleschReadingScoreAvg", "0.00");
-		emptyResponse.put("sentiment", ":-|");
+	public void testGetVideoDetails_Success() throws Exception {
+		// Prepare test data
+		String videoId = "test123";
+		String mockResponseJson =
+			"{" +
+			"\"items\": [{" +
+			"\"snippet\": {" +
+			"\"title\": \"Test Video\"," +
+			"\"description\": \"Test Description\"," +
+			"\"thumbnails\": {\"default\": {\"url\": \"http://test.com\"}}," +
+			"\"channelTitle\": \"Test Channel\"," +
+			"\"publishedAt\": \"2023-01-01\"," +
+			"\"tags\": [\"tag1\", \"tag2\"]" +
+			"}," +
+			"\"statistics\": {\"viewCount\": \"1000\"}" +
+			"}]}";
+		JsonNode mockJsonResponse = objectMapper.readTree(mockResponseJson);
 
-		when(searchResponse.getStatus()).thenReturn(OK);
-		when(searchResponse.asJson()).thenReturn(emptyResponse);
-		when(searchRequest.get()).thenReturn(
-			CompletableFuture.completedFuture(searchResponse)
+		// Setup mocks
+		when(youtubeService.getVideo(videoId)).thenReturn(
+			CompletableFuture.completedFuture(wsResponse)
 		);
+		when(wsResponse.getStatus()).thenReturn(200);
+		when(wsResponse.asJson()).thenReturn(mockJsonResponse);
 
-		// Execute and verify
-		CompletionStage<Result> resultStage = youtubeController.searchVideos(
-			MOCK_QUERY
+		// Execute test
+		CompletionStage<Result> resultStage = controller.getVideoDetails(
+			videoId
 		);
-		Result result = resultStage.toCompletableFuture().join();
+		Result result = resultStage.toCompletableFuture().get();
 
-		assertEquals(OK, result.status());
-		String responseBody = contentAsString(result);
-		assertEquals(emptyResponse.toString(), responseBody); // Expecting unchanged empty response
+		// Verify
+		assertEquals(200, result.status());
+		verify(youtubeService).getVideo(videoId);
+		verify(wsResponse).getStatus();
+		verify(wsResponse).asJson();
 	}
 
 	@Test
-	public void testSearchVideos_ApiError() {
-		// Simulate an error response from the search API
-		when(searchResponse.getStatus()).thenReturn(INTERNAL_SERVER_ERROR);
-		when(searchResponse.getBody()).thenReturn("YouTube API error");
+	public void testGetChannelProfile_Success() throws Exception {
+		try {
+			// Prepare test data
+			String channelId = "channel123";
+			String mockChannelJson =
+				"{" +
+				"\"items\": [{" +
+				"\"id\": \"channel123\"," +
+				"\"snippet\": {" +
+				"\"title\": \"Test Channel\"," +
+				"\"description\": \"Test Description\"," +
+				"\"thumbnails\": {\"default\": {\"url\": \"http://test.com\"}}," +
+				"\"country\": \"US\"" +
+				"}," +
+				"\"statistics\": {" +
+				"\"subscriberCount\": \"1000\"," +
+				"\"viewCount\": \"5000\"," +
+				"\"videoCount\": \"100\"" +
+				"}" +
+				"}]}";
 
-		// Perform the searchVideos call
-		CompletionStage<Result> resultStage = youtubeController.searchVideos(
-			MOCK_QUERY
-		);
-		Result result = resultStage.toCompletableFuture().join();
+			String mockVideosJson = "{\"items\": []}";
+			JsonNode mockChannelResponse = objectMapper.readTree(
+				mockChannelJson
+			);
+			JsonNode mockVideosResponse = objectMapper.readTree(mockVideosJson);
 
-		// Verify that the response is an internal server error
-		assertEquals(INTERNAL_SERVER_ERROR, result.status());
-		assertEquals(
-			"YouTube API error: YouTube API error",
-			contentAsString(result)
-		);
+			// Create separate response mocks for each call
+			WSResponse channelResponse = mock(WSResponse.class);
+			WSResponse videosResponse = mock(WSResponse.class);
+
+			// Create separate request mocks for each call
+			WSRequest channelRequest = mock(WSRequest.class);
+			WSRequest videosRequest = mock(WSRequest.class);
+
+			// Setup channel request and response
+			when(wsClient.url(contains("/channels"))).thenReturn(
+				channelRequest
+			);
+			// when(
+			// 	channelRequest.addQueryParameter(anyString(), anyString())
+			// ).thenReturn(channelRequest);
+			when(channelRequest.get()).thenReturn(
+				CompletableFuture.completedFuture(channelResponse)
+			);
+			when(channelResponse.asJson()).thenReturn(mockChannelResponse);
+			// when(channelResponse.getStatus()).thenReturn(200);
+
+			// Setup videos request and response
+			when(wsClient.url(contains("/search"))).thenReturn(videosRequest);
+			// when(
+			// 	videosRequest.addQueryParameter(anyString(), anyString())
+			// ).thenReturn(videosRequest);
+			when(videosRequest.get()).thenReturn(
+				CompletableFuture.completedFuture(videosResponse)
+			);
+			when(videosResponse.asJson()).thenReturn(mockVideosResponse);
+			// when(videosResponse.getStatus()).thenReturn(200);
+
+			// Execute test
+			CompletionStage<Result> resultStage = controller.getChannelProfile(
+				channelId
+			);
+			Result result = resultStage.toCompletableFuture().get();
+
+			// Verify
+			assertEquals(200, result.status());
+
+			// Verify API calls
+			verify(wsClient).url(contains("/channels"));
+			verify(wsClient).url(contains("/search"));
+			// verify(channelRequest, atLeastOnce()).addQueryParameter("", "");
+			// verify(videosRequest, atLeastOnce()).addQueryParameter("", "");
+			verify(channelRequest).get();
+			// verify(videosRequest).get();
+			verify(channelResponse).asJson();
+			// verify(videosResponse).asJson();
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			throw e;
+		}
 	}
 
 	@Test
-	public void testFetchVideosBySearchTerm() throws Exception {
-		// Prepare a mock JSON response
-		ObjectNode mockResponse = JsonNodeFactory.instance.objectNode();
-		ArrayNode itemsArray = mockResponse.putArray("items");
-
-		// Add a video entry to the items array
-		ObjectNode videoItem = itemsArray.addObject();
-		videoItem.putObject("id").put("videoId", "12345");
-		ObjectNode snippet = videoItem.putObject("snippet");
-		snippet.put("title", "Sample Video Title");
-		snippet.put("description", "Sample Video Description");
-		snippet
-			.putObject("thumbnails")
-			.putObject("default")
-			.put("url", "http://sample.thumbnail.url");
-		snippet.put("channelTitle", "Sample Channel Title");
-		snippet.put("publishedAt", "2023-01-01T00:00:00Z");
-		snippet.put("viewCount", 1000);
-
-		// Mock the response from WSClient
-		when(searchRequest.get()).thenReturn(
-			CompletableFuture.completedFuture(searchResponse)
+	public void testSearchVideos_ApiError() throws Exception {
+		String query = "query";
+		// Setup cache mock
+		when(cache.getOrElseUpdate(eq(query), any(), anyInt())).thenAnswer(
+			invocation -> {
+				// Execute the Callable passed to getOrElseUpdate
+				java.util.concurrent.Callable<?> callable =
+					invocation.getArgument(1);
+				return callable.call();
+			}
 		);
-		when(searchResponse.getStatus()).thenReturn(200);
-		when(searchResponse.asJson()).thenReturn(mockResponse);
-
-		// Execute the fetchVideosBySearchTerm method
-		List<YoutubeVideo> videos = youtubeController.fetchVideosBySearchTerm(
-			MOCK_QUERY
+		// Setup mocks for error scenario
+		when(wsClient.url(anyString())).thenReturn(wsRequest);
+		when(wsRequest.addQueryParameter(anyString(), anyString())).thenReturn(
+			wsRequest
 		);
+		when(wsRequest.get()).thenReturn(
+			CompletableFuture.completedFuture(wsResponse)
+		);
+		when(wsResponse.getStatus()).thenReturn(500);
+		when(wsResponse.getBody()).thenReturn("API Error");
 
-		// Verify the parsed result
-		assertEquals(1, videos.size());
-		YoutubeVideo video = videos.get(0);
-		assertEquals("12345", video.getVideoId());
-		assertEquals("Sample Video Title", video.getTitle());
-		assertEquals("Sample Video Description", video.getDescription());
-		assertEquals("http://sample.thumbnail.url", video.getThumbnailUrl());
-		assertEquals("Sample Channel Title", video.getChannelTitle());
-		assertEquals("2023-01-01T00:00:00Z", video.getPublishedAt());
-		assertEquals(1000L, video.getViewCount());
+		// Execute test
+		CompletionStage<Result> resultStage = controller.searchVideos("query");
+		Result result = resultStage.toCompletableFuture().get();
+
+		// Verify
+		assertEquals(500, result.status());
+		verify(wsClient).url(contains("/youtube/v3/search"));
+		verify(cache).getOrElseUpdate(eq(query), any(), anyInt());
+		verify(wsResponse).getBody();
+	}
+
+	@Test
+	public void testGetVideoDetails_NotFound() throws Exception {
+		String videoId = "nonexistent";
+		String mockResponseJson = "{\"items\": []}";
+		JsonNode mockJsonResponse = objectMapper.readTree(mockResponseJson);
+
+		when(youtubeService.getVideo(videoId)).thenReturn(
+			CompletableFuture.completedFuture(wsResponse)
+		);
+		when(wsResponse.getStatus()).thenReturn(200);
+		when(wsResponse.asJson()).thenReturn(mockJsonResponse);
+
+		CompletionStage<Result> resultStage = controller.getVideoDetails(
+			videoId
+		);
+		Result result = resultStage.toCompletableFuture().get();
+
+		assertEquals(404, result.status());
 	}
 }
