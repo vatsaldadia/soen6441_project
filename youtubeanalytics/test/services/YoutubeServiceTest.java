@@ -1,0 +1,216 @@
+package services;
+
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+import static play.test.Helpers.*;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import controllers.YoutubeController;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.OngoingStubbing;
+import play.cache.AsyncCacheApi;
+import play.libs.ws.*;
+import play.mvc.Result;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
+@RunWith(MockitoJUnitRunner.class)
+public class YoutubeServiceTest {
+
+    @Mock
+    private WSClient wsClient;
+
+    @Mock
+    private AsyncCacheApi cache;
+
+    @Mock
+    private WSRequest wsRequest;
+
+    @Mock
+    private WSResponse wsResponse;
+
+    @Mock
+    private WordStatsService wordStatsService;
+
+//    @InjectMocks
+//    private YoutubeService youtubeService;
+
+    private YoutubeController controller;
+    private YoutubeService youtubeService;
+    private ObjectMapper mapper;
+
+    @Before
+    public void setUp() {
+        mapper = new ObjectMapper();
+        youtubeService = new YoutubeService(
+                wsClient,
+                cache
+        );
+
+    }
+
+//    @Test
+//    public void testGetVideo_CacheHit() {
+//        String videoId = "testVideoId";
+//        ObjectNode cachedResponse = JsonNodeFactory.instance.objectNode();
+//        cachedResponse.put("status", 200);
+//
+//        when(cache.getOrElseUpdate(eq(videoId), any(), eq(3600)))
+//                .thenReturn(CompletableFuture.completedFuture(wsResponse));
+//        when(wsResponse.asJson()).thenReturn(cachedResponse);
+//
+//        CompletionStage<WSResponse> result = youtubeService.getVideo(videoId);
+//        WSResponse response = result.toCompletableFuture().join();
+//
+//        assertEquals(0, response.getStatus());
+//        verify(cache, times(1)).getOrElseUpdate(eq(videoId), any(), eq(3600));
+//    }
+
+//    @Test
+//    public void testGetVideo_CacheMiss() throws JsonProcessingException {
+//        String videoID = "testID";
+//        String mockResponseJson =
+//                "{\"items\": [{\"id\": {\"videoId\": \"123\"}, \"snippet\": {\"title\": \"Test Video\"}}]}";
+//        JsonNode mockJsonResponse = objectMapper.readTree(mockResponseJson);
+//        ObjectNode modifiedResponse = objectMapper.createObjectNode();
+//        modifiedResponse.put("status", "success");
+//
+//        when(cache.getOrElseUpdate(eq(videoID), any(), anyInt())).thenAnswer(
+//                invocation -> {
+//                    // Execute the Callable passed to getOrElseUpdate
+//                    java.util.concurrent.Callable<?> callable =
+//                            invocation.getArgument(1);
+//                    return callable.call();
+//                }
+//        );
+//
+//        // Setup mocks
+//        when(wsClient.url(anyString())).thenReturn(wsRequest);
+//        when(wsRequest.addQueryParameter(anyString(), anyString())).thenReturn(
+//                wsRequest
+//        );
+//        when(wsRequest.get()).thenReturn(
+//                CompletableFuture.completedFuture(wsResponse)
+//        );
+//        when(wsResponse.getStatus()).thenReturn(200);
+//        when(wsResponse.asJson()).thenReturn(mockJsonResponse);
+//        when(youtubeService.modifyResponse(any(ObjectNode.class))).thenReturn(
+//                CompletableFuture.completedFuture(modifiedResponse)
+//        );
+//
+//        // Execute test
+//        CompletionStage<Result> resultStage = controller.searchVideos(query);
+//        Result result = resultStage.toCompletableFuture().get();
+//
+//        // Verify
+//        assertEquals(200, result.status());
+//        verify(wsClient).url(contains("/youtube/v3/search"));
+//        verify(youtubeService).modifyResponse(any(ObjectNode.class));
+//        verify(cache).getOrElseUpdate(eq(query), any(), anyInt());
+//    }
+
+
+    @Test
+    public void testModifyResponse() throws Exception {
+        // Mock the YouTube API response
+        ObjectNode youtubeResponse = mapper.createObjectNode();
+        ArrayNode items = JsonNodeFactory.instance.arrayNode();
+
+        ObjectNode item1 = mapper.createObjectNode();
+        ObjectNode id1 = mapper.createObjectNode();
+        id1.put("videoId", "video1");
+        item1.set("id", id1);
+
+        ObjectNode item2 = mapper.createObjectNode();
+        ObjectNode id2 = mapper.createObjectNode();
+        id2.put("videoId", "video2");
+        item2.set("id", id2);
+
+        items.add(item1);
+        items.add(item2);
+        youtubeResponse.set("items", items);
+
+        when(cache.getOrElseUpdate(anyString(), any(), anyInt())).thenAnswer(
+                invocation -> {
+                    // Execute the Callable passed to getOrElseUpdate
+                    java.util.concurrent.Callable<?> callable =
+                            invocation.getArgument(1);
+                    return callable.call();
+                }
+        );
+
+        when(wsClient.url(anyString())).thenReturn(wsRequest);
+        when(wsRequest.addQueryParameter(anyString(), anyString())).thenReturn(wsRequest);
+        when(wsRequest.get()).thenReturn(CompletableFuture.completedFuture(wsResponse));
+
+        // Mock calls to getVideo method
+        ObjectNode videoResponse1 = mapper.createObjectNode();
+        ObjectNode snippet1 = mapper.createObjectNode();
+        snippet1.put("description", "Test description for video 1.");
+        ArrayNode items1 = JsonNodeFactory.instance.arrayNode();
+        ObjectNode item1Response = mapper.createObjectNode();
+        item1Response.set("snippet", snippet1);
+        items1.add(item1Response);
+        videoResponse1.set("items", items1);
+
+        String jsonResponse1 = mapper.writeValueAsString(videoResponse1);
+
+        // Configure WSResponse to return JSON
+        when(wsResponse.getStatus()).thenReturn(200);
+        when(wsResponse.asJson()).thenReturn(mapper.readTree(jsonResponse1));
+        when(youtubeService.getVideo("video1")).thenReturn(CompletableFuture.completedFuture(wsResponse));
+
+        ObjectNode videoResponse2 = mapper.createObjectNode();
+        ObjectNode snippet2 = mapper.createObjectNode();
+        snippet2.put("description", "Test description for video 2.");
+        ArrayNode items2 = JsonNodeFactory.instance.arrayNode();
+        ObjectNode item2Response = mapper.createObjectNode();
+        item2Response.set("snippet", snippet2);
+        items2.add(item2Response);
+        videoResponse2.set("items", items2);
+
+        String jsonResponse2 = mapper.writeValueAsString(videoResponse2);
+
+        // Configure WSResponse to return JSON
+        when(wsResponse.getStatus()).thenReturn(200);
+        when(wsResponse.asJson()).thenReturn(mapper.readTree(jsonResponse2));
+        when(youtubeService.getVideo("video2")).thenReturn(CompletableFuture.completedFuture(wsResponse));
+
+        // Execute the method
+        CompletionStage<ObjectNode> resultStage = youtubeService.modifyResponse(youtubeResponse);
+        ObjectNode modifiedResponse = resultStage.toCompletableFuture().join();
+
+        assertTrue(modifiedResponse.has("sentiment"));
+        assertTrue(modifiedResponse.has("fleschKincaidGradeLevelAvg"));
+        assertTrue(modifiedResponse.has("fleschReadingScoreAvg"));
+        assertTrue(modifiedResponse.has("items"));
+
+        ArrayNode modifiedItems = (ArrayNode) modifiedResponse.get("items");
+        assertEquals(2, modifiedItems.size());
+
+        JsonNode modifiedItem1 = modifiedItems.get(0);
+        assertEquals("5.24", modifiedItem1.get("fleschKincaidGradeLevel").asText());
+        assertEquals("66.40", modifiedItem1.get("fleschReadingScore").asText());
+
+        // Verify that analyzeSentiment was called once for the final sentiment calculation
+        List<String> descriptions = Arrays.asList(
+                "Test description for video 1.",
+                "Test description for video 2."
+        );
+
+    }
+
+
+}

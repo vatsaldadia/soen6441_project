@@ -65,12 +65,30 @@ public class ReadabilityCalculatorTest {
 	}
 
 	@Test
+	public void testCountWords_ZeroCheck() {
+		String description = "";
+		int expectedWordCount = 1;
+		int actualWordCount = ReadabilityCalculator.countWords(description);
+		assertEquals(expectedWordCount, actualWordCount);
+	}
+
+	@Test
 	public void testCountSentences() {
 		String description =
 			"This is a simple sentence. It is used for testing.";
 		int expectedSentenceCount = 2;
 		int actualSentenceCount = ReadabilityCalculator.countSentences(
 			description
+		);
+		assertEquals(expectedSentenceCount, actualSentenceCount);
+	}
+
+	@Test
+	public void testCountSentences_ZeroCheck() {
+		String description = "";
+		int expectedSentenceCount = 1;
+		int actualSentenceCount = ReadabilityCalculator.countSentences(
+				description
 		);
 		assertEquals(expectedSentenceCount, actualSentenceCount);
 	}
@@ -97,5 +115,7 @@ public class ReadabilityCalculatorTest {
 		assertEquals(2, ReadabilityCalculator.countSyllablesInWord("used"));
 		assertEquals(1, ReadabilityCalculator.countSyllablesInWord("for"));
 		assertEquals(2, ReadabilityCalculator.countSyllablesInWord("testing"));
+		assertEquals(1, ReadabilityCalculator.countSyllablesInWord("ggc"));
+		assertEquals(1, ReadabilityCalculator.countSyllablesInWord(""));
 	}
 }

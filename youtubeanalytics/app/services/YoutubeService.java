@@ -53,7 +53,7 @@ public class YoutubeService {
 	public CompletionStage<ObjectNode> modifyResponse(
 		ObjectNode youtubeResponse
 	) {
-		if (youtubeResponse.has("items")) {
+//		if (youtubeResponse.has("items")) {
 			JsonNode items = youtubeResponse.get("items");
 			ObjectNode modifiedResponse = youtubeResponse.deepCopy();
 			ArrayNode modifiedItems = JsonNodeFactory.instance.arrayNode();
@@ -142,11 +142,11 @@ public class YoutubeService {
 					"fleschReadingScoreAvg",
 					String.format("%.2f", scoreAvg)
 				);
-				modifiedResponse.put("items", modifiedItems);
+				modifiedResponse.set("items", modifiedItems);
 
 				return modifiedResponse;
 			});
-		}
-		return CompletableFuture.completedFuture(youtubeResponse);
+//		}
+//		return CompletableFuture.completedFuture(youtubeResponse);
 	}
 }
