@@ -1,5 +1,7 @@
 package controllers;
 
+import static services.WordStatsService.computeWordStats;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -22,8 +24,6 @@ import services.ReadabilityCalculator;
 import services.SentimentAnalyzer;
 import services.WordStatsService;
 import services.YoutubeService;
-
-import static services.WordStatsService.getWordStats;
 
 public class YoutubeController extends Controller {
 
@@ -89,19 +89,9 @@ public class YoutubeController extends Controller {
 			},
 			3600
 		); // Cache for 1 hour (3600 seconds)
-
-//		return ws
-//				.url(YOUTUBE_URL + "/search")
-//				.addQueryParameter("part", "snippet")
-//				.addQueryParameter("maxResults", "50")
-//				.addQueryParameter("q", query)
-//				.addQueryParameter("type", "video")
-//				.addQueryParameter("key", YOUTUBE_API_KEY)
-//				.get();
 	}
 
-
-	public CompletionStage<Result> fetchVideosBySearchTerm(String query) {
+	public CompletionStage<Result> getWordStats(String query) {
 		// Creating an empty list to store the fetched video details
 		List<YoutubeVideo> videoList = new ArrayList<>();
 
@@ -148,7 +138,12 @@ public class YoutubeController extends Controller {
 					}
 				}
 
-				return ok(views.html.wordstats.render(getWordStats(videoList), query));
+				return ok(
+					views.html.wordstats.render(
+						computeWordStats(videoList),
+						query
+					)
+				);
 			} else {
 				return null;
 			}

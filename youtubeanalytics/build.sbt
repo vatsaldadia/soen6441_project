@@ -17,7 +17,13 @@ libraryDependencies ++= Seq(
 //  "org.junit.jupiter" % "junit-jupiter-api" % "5.10.0" % Test,
 //  "org.junit.jupiter" % "junit-jupiter-engine" % "5.10.0" % Test,
 //  "org.junit.vintage" % "junit-vintage-engine" % "5.10.0" % Test,
-  "org.mockito" % "mockito-core" % "5.11.0",
-  "org.mockito" % "mockito-junit-jupiter" % "5.12.0"
+ // "org.mockito" % "mockito-core" % "5.11.0",
+  //"org.mockito" % "mockito-junit-jupiter" % "5.12.0"
+  "org.mockito" % "mockito-core" % "3.12.4" % Test,
+  "org.mockito" % "mockito-junit-jupiter" % "3.12.4" % Test,
+  "org.junit.jupiter" % "junit-jupiter-api" % "5.8.1" % Test,
+  "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.1" % Test,
+   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.0" % Test
 )
 
+Test / testOptions += Tests.Argument(TestFrameworks.JUnit)
