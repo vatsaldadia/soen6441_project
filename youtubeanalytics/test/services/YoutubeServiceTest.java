@@ -41,13 +41,6 @@ public class YoutubeServiceTest {
     @Mock
     private WSResponse wsResponse;
 
-    @Mock
-    private WordStatsService wordStatsService;
-
-//    @InjectMocks
-//    private YoutubeService youtubeService;
-
-    private YoutubeController controller;
     private YoutubeService youtubeService;
     private ObjectMapper mapper;
 
@@ -60,66 +53,6 @@ public class YoutubeServiceTest {
         );
 
     }
-
-//    @Test
-//    public void testGetVideo_CacheHit() {
-//        String videoId = "testVideoId";
-//        ObjectNode cachedResponse = JsonNodeFactory.instance.objectNode();
-//        cachedResponse.put("status", 200);
-//
-//        when(cache.getOrElseUpdate(eq(videoId), any(), eq(3600)))
-//                .thenReturn(CompletableFuture.completedFuture(wsResponse));
-//        when(wsResponse.asJson()).thenReturn(cachedResponse);
-//
-//        CompletionStage<WSResponse> result = youtubeService.getVideo(videoId);
-//        WSResponse response = result.toCompletableFuture().join();
-//
-//        assertEquals(0, response.getStatus());
-//        verify(cache, times(1)).getOrElseUpdate(eq(videoId), any(), eq(3600));
-//    }
-
-//    @Test
-//    public void testGetVideo_CacheMiss() throws JsonProcessingException {
-//        String videoID = "testID";
-//        String mockResponseJson =
-//                "{\"items\": [{\"id\": {\"videoId\": \"123\"}, \"snippet\": {\"title\": \"Test Video\"}}]}";
-//        JsonNode mockJsonResponse = objectMapper.readTree(mockResponseJson);
-//        ObjectNode modifiedResponse = objectMapper.createObjectNode();
-//        modifiedResponse.put("status", "success");
-//
-//        when(cache.getOrElseUpdate(eq(videoID), any(), anyInt())).thenAnswer(
-//                invocation -> {
-//                    // Execute the Callable passed to getOrElseUpdate
-//                    java.util.concurrent.Callable<?> callable =
-//                            invocation.getArgument(1);
-//                    return callable.call();
-//                }
-//        );
-//
-//        // Setup mocks
-//        when(wsClient.url(anyString())).thenReturn(wsRequest);
-//        when(wsRequest.addQueryParameter(anyString(), anyString())).thenReturn(
-//                wsRequest
-//        );
-//        when(wsRequest.get()).thenReturn(
-//                CompletableFuture.completedFuture(wsResponse)
-//        );
-//        when(wsResponse.getStatus()).thenReturn(200);
-//        when(wsResponse.asJson()).thenReturn(mockJsonResponse);
-//        when(youtubeService.modifyResponse(any(ObjectNode.class))).thenReturn(
-//                CompletableFuture.completedFuture(modifiedResponse)
-//        );
-//
-//        // Execute test
-//        CompletionStage<Result> resultStage = controller.searchVideos(query);
-//        Result result = resultStage.toCompletableFuture().get();
-//
-//        // Verify
-//        assertEquals(200, result.status());
-//        verify(wsClient).url(contains("/youtube/v3/search"));
-//        verify(youtubeService).modifyResponse(any(ObjectNode.class));
-//        verify(cache).getOrElseUpdate(eq(query), any(), anyInt());
-//    }
 
 
     @Test
@@ -203,12 +136,6 @@ public class YoutubeServiceTest {
         JsonNode modifiedItem1 = modifiedItems.get(0);
         assertEquals("5.24", modifiedItem1.get("fleschKincaidGradeLevel").asText());
         assertEquals("66.40", modifiedItem1.get("fleschReadingScore").asText());
-
-        // Verify that analyzeSentiment was called once for the final sentiment calculation
-        List<String> descriptions = Arrays.asList(
-                "Test description for video 1.",
-                "Test description for video 2."
-        );
 
     }
 
