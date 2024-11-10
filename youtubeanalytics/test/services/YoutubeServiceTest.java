@@ -26,6 +26,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+/**
+ * Test class for YoutubeService.
+ * This class contains unit tests for the YoutubeService methods.
+ *
+ * @author Vatsal Dadia
+ */
 @RunWith(MockitoJUnitRunner.class)
 public class YoutubeServiceTest {
 
@@ -44,6 +50,12 @@ public class YoutubeServiceTest {
     private YoutubeService youtubeService;
     private ObjectMapper mapper;
 
+    /**
+     * Sets up the test environment.
+     * Initializes the YoutubeService and ObjectMapper instances.
+     *
+     * @author Vatsal Dadia
+     */
     @Before
     public void setUp() {
         mapper = new ObjectMapper();
@@ -54,7 +66,13 @@ public class YoutubeServiceTest {
 
     }
 
-
+    /**
+     * Tests the modifyResponse method.
+     * Verifies that the method correctly modifies the YouTube API response.
+     *
+     * @throws Exception if an error occurs during the test.
+     * @author Vatsal Dadia
+     */
     @Test
     public void testModifyResponse() throws Exception {
         // Mock the YouTube API response
@@ -138,6 +156,5 @@ public class YoutubeServiceTest {
         assertEquals("66.40", modifiedItem1.get("fleschReadingScore").asText());
 
     }
-
 
 }
