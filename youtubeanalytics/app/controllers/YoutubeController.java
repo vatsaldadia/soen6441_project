@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
+import java.net.URLEncoder;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -271,4 +273,38 @@ public class YoutubeController extends Controller {
             }
         });
     }
+
+    public CompletionStage<Result> getTagProfile(String video_id) {
+        // Construct the YouTube API search URL for the given tag
+        String encodedHashtag = URLEncoder.encode(video_id, StandardCharsets.UTF_8);
+        String tagSearchUrl = YOUTUBE_URL +
+                "/search?part=snippet&q=%23" + encodedHashtag + // Add %23 for the '#' symbol
+                "&maxResults=10&type=video&key=" + YOUTUBE_API_KEY;
+
+        return ws.url(tagSearchUrl)
+                .get()
+                .thenApply(response -> {
+                    JsonNode tagData = response.asJson();
+                    System.out.println("API Response for tag: " + tagData.toString());
+
+                    ArrayNode videoList = JsonNodeFactory.instance.arrayNode();
+
+                    // Loop through the returned videos and extract necessary data
+                    if (tagData.has("items")) {
+                        for (JsonNode item : tagData.get("items")) {
+                            ObjectNode videoNode = JsonNodeFactory.instance.objectNode();
+                            String videoId = item.get("id").get("videoId").asText();
+                            JsonNode snippet = item.get("snippet");
+                            videoNode.put("videoId", videoId);
+                            videoNode.put("title", snippet.get("title").asText());
+                            videoNode.put("description", snippet.get("description").asText());
+                            videoNode.put("thumbnailUrl", snippet.get("thumbnails").get("default").get("url").asText());
+                            videoList.add(videoNode);
+                        }
+                    }
+                    // Render the tag profile view with the list of videos
+                    return ok(views.html.tagprofile.render(video_id, videoList.toString()));
+                });
+    }
+
 }

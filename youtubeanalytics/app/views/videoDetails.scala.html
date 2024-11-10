@@ -17,9 +17,11 @@
 
 <h3>Tags:</h3>
 <ul>
-    @for(tag <- tags) {
-    <li>@tag</li>
-    }
+        @for(tag <- tags) {
+        <li>
+            <a href="@routes.YoutubeController.getTagProfile(tag)" target="_blank">@tag</a>
+        </li>
+        }
 </ul>
 
 
