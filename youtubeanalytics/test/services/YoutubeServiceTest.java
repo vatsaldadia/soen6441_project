@@ -12,10 +12,15 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import controllers.YoutubeController;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.*;
+import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.MockitoRule;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.stubbing.OngoingStubbing;
 import play.cache.AsyncCacheApi;
 import play.libs.ws.*;
@@ -32,6 +37,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author Vatsal Dadia
  */
+//@MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 @RunWith(MockitoJUnitRunner.class)
 public class YoutubeServiceTest {
 
@@ -63,7 +69,6 @@ public class YoutubeServiceTest {
                 wsClient,
                 cache
         );
-
     }
 
     /**
@@ -121,7 +126,7 @@ public class YoutubeServiceTest {
         // Configure WSResponse to return JSON
         when(wsResponse.getStatus()).thenReturn(200);
         when(wsResponse.asJson()).thenReturn(mapper.readTree(jsonResponse1));
-        when(youtubeService.getVideo("video1")).thenReturn(CompletableFuture.completedFuture(wsResponse));
+        Mockito.lenient().when(youtubeService.getVideo("video1")).thenReturn(CompletableFuture.completedFuture(wsResponse));
 
         ObjectNode videoResponse2 = mapper.createObjectNode();
         ObjectNode snippet2 = mapper.createObjectNode();
@@ -137,7 +142,7 @@ public class YoutubeServiceTest {
         // Configure WSResponse to return JSON
         when(wsResponse.getStatus()).thenReturn(200);
         when(wsResponse.asJson()).thenReturn(mapper.readTree(jsonResponse2));
-        when(youtubeService.getVideo("video2")).thenReturn(CompletableFuture.completedFuture(wsResponse));
+        Mockito.lenient().when(youtubeService.getVideo("video2")).thenReturn(CompletableFuture.completedFuture(wsResponse));
 
         // Execute the method
         CompletionStage<ObjectNode> resultStage = youtubeService.modifyResponse(youtubeResponse);
