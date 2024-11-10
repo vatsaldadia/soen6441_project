@@ -19,6 +19,7 @@ libraryDependencies ++= Seq(
 //  "org.junit.vintage" % "junit-vintage-engine" % "5.10.0" % Test,
  // "org.mockito" % "mockito-core" % "5.11.0",
   //"org.mockito" % "mockito-junit-jupiter" % "5.12.0"
+//  "com.typesafe.sbt" % "sbt-javadoc" % "1.3.3",
   "org.mockito" % "mockito-core" % "3.12.4" % Test,
   "org.mockito" % "mockito-junit-jupiter" % "3.12.4" % Test,
   "org.junit.jupiter" % "junit-jupiter-api" % "5.8.1" % Test,
