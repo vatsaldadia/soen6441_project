@@ -107,6 +107,7 @@ public class YoutubeService {
             futures.stream()
                 .map(CompletionStage::toCompletableFuture)
                 .map(future -> future.getNow(null))
+                .limit(10)
                 .forEach(videoNode -> modifiedItems.add(videoNode));
 
             double gradeAvg = ReadabilityCalculator.calculateGradeAvg(grades);
