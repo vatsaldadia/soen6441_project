@@ -1,6 +1,7 @@
 package controllers;
 
 import static services.WordStatsService.computeWordStats;
+import services.ChannelProfileService.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -26,6 +27,15 @@ import services.ReadabilityCalculator;
 import services.SentimentAnalyzer;
 import services.WordStatsService;
 import services.YoutubeService;
+import play.mvc.Controller;
+import play.mvc.Result;
+import play.libs.concurrent.HttpExecutionContext;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import services.ChannelProfileService;
+
+import javax.inject.Inject;
+import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Controller class for handling YouTube-related requests.
@@ -41,6 +51,7 @@ public class YoutubeController extends Controller {
 
     private final YoutubeService youtubeService;
     private final AsyncCacheApi cache;
+    private final ChannelProfileService channelProfileService;
 
     /**
      * Constructor for YoutubeController.
@@ -52,10 +63,11 @@ public class YoutubeController extends Controller {
      * @author Mohnish Mirchandani
      */
     @Inject
-    public YoutubeController(WSClient ws, WordStatsService wordStatsService, YoutubeService youtubeService, AsyncCacheApi cache) {
+    public YoutubeController(WSClient ws, WordStatsService wordStatsService, YoutubeService youtubeService, AsyncCacheApi cache, ChannelProfileService channelProfileService) {
         this.ws = ws;
         this.youtubeService = youtubeService;
         this.cache = cache;
+        this.channelProfileService = channelProfileService;
     }
 
     /**
@@ -152,83 +164,19 @@ public class YoutubeController extends Controller {
      */
     public CompletionStage<Result> getChannelProfile(String channelId) {
         String channelUrl = YOUTUBE_URL + "/channels?part=snippet,statistics&id=" + channelId + "&key=" + YOUTUBE_API_KEY;
+        String videosUrl = YOUTUBE_URL + "/search?part=snippet&channelId=" + channelId + "&maxResults=10&order=date&type=video&key=" + YOUTUBE_API_KEY;
 
-        return ws.url(channelUrl).get().thenApply(response -> {
-            JsonNode channelData = response.asJson();
+        // Make API calls for channel details and latest videos
+        CompletionStage<JsonNode> channelResponseStage = ws.url(channelUrl).get().thenApply(response -> response.asJson());
+        CompletionStage<JsonNode> videosResponseStage = ws.url(videosUrl).get().thenApply(response -> response.asJson());
 
-            if (channelData.has("items") && channelData.get("items").size() > 0) {
-                JsonNode channelJson = channelData.get("items").get(0);
+        // Combine the results and process them with ChannelProfileService
+        return channelResponseStage.thenCombine(videosResponseStage, (channelData, videosData) -> {
+            Map<String, String> channelDetails = channelProfileService.parseChannelDetails(channelData);
+            ArrayNode latestVideos = channelProfileService.parseLatestVideos(videosData);
+            channelDetails.put("latestVideos", latestVideos.toString());
 
-                Map<String, String> channelDetails = new HashMap<>();
-                channelDetails.put("id", channelJson.has("id") ? channelJson.get("id").asText() : "N/A");
-
-                JsonNode snippet = channelJson.get("snippet");
-                if (snippet != null) {
-                    channelDetails.put("title", snippet.has("title") ? snippet.get("title").asText() : "No title");
-                    channelDetails.put("description", snippet.has("description") ? snippet.get("description").asText() : "No description");
-                    channelDetails.put("country", snippet.has("country") ? snippet.get("country").asText() : "N/A");
-                }
-
-                JsonNode thumbnails = snippet.get("thumbnails");
-                if (thumbnails != null) {
-                    channelDetails.put("thumbnailDefault", thumbnails.get("default").get("url").asText());
-                }
-
-                JsonNode statistics = channelJson.get("statistics");
-                if (statistics != null) {
-                    channelDetails.put("subscriberCount", statistics.has("subscriberCount") ? statistics.get("subscriberCount").asText() : "0");
-                    channelDetails.put("viewCount", statistics.has("viewCount") ? statistics.get("viewCount").asText() : "0");
-                    channelDetails.put("videoCount", statistics.has("videoCount") ? statistics.get("videoCount").asText() : "0");
-                }
-
-                channelDetails.put("channelLink", "https://www.youtube.com/channel/" + channelId);
-
-                String videosUrl = YOUTUBE_URL + "/search?part=snippet&channelId=" + channelId + "&maxResults=10&order=date&type=video&key=" + YOUTUBE_API_KEY;
-
-                CompletionStage<JsonNode> videosResponseStage = ws.url(videosUrl).get().thenApply(videosResponse -> {
-                    JsonNode videosData = videosResponse.asJson();
-                    ArrayNode latestVideos = JsonNodeFactory.instance.arrayNode();
-
-                    if (videosData.has("items")) {
-                        for (JsonNode item : videosData.get("items")) {
-                            String videoId = item.get("id").get("videoId").asText();
-
-                            CompletionStage<JsonNode> videoDetailResponse = ws.url(YOUTUBE_URL + "/videos")
-                                .addQueryParameter("part", "snippet")
-                                .addQueryParameter("id", videoId)
-                                .addQueryParameter("key", YOUTUBE_API_KEY)
-                                .get()
-                                .thenApply(videoDetail -> {
-                                    JsonNode videoDetailData = videoDetail.asJson();
-                                    if (videoDetailData.has("items") && videoDetailData.get("items").size() > 0) {
-                                        JsonNode videoSnippet = videoDetailData.get("items").get(0).get("snippet");
-
-                                        ObjectNode videoNode = JsonNodeFactory.instance.objectNode();
-                                        videoNode.put("videoId", videoId);
-                                        videoNode.put("title", videoSnippet.get("title").asText());
-                                        videoNode.put("description", videoSnippet.get("description").asText());
-                                        videoNode.put("thumbnailUrl", videoSnippet.get("thumbnails").get("default").get("url").asText());
-                                        return videoNode;
-                                    }
-                                    return null;
-                                });
-
-                            JsonNode fullVideoDetail = videoDetailResponse.toCompletableFuture().join();
-                            if (fullVideoDetail != null) {
-                                latestVideos.add(fullVideoDetail);
-                            }
-                        }
-                    }
-                    return latestVideos;
-                });
-
-                videosResponseStage.toCompletableFuture().join();
-                channelDetails.put("latestVideos", videosResponseStage.toCompletableFuture().join().toString());
-
-                return ok(views.html.channelprofile.render(channelDetails));
-            } else {
-                return notFound("Channel not found");
-            }
+            return ok(views.html.channelprofile.render(channelDetails));
         });
     }
 
