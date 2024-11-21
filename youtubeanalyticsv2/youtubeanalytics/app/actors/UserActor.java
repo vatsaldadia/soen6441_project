@@ -1,45 +1,47 @@
 package actors;
 
 import akka.actor.AbstractActor;
-import akka.actor.Props;
 import akka.actor.ActorRef;
+import akka.actor.Props;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import messages.Messages;
 import play.libs.Json;
 
 public class UserActor extends AbstractActor {
 
-    private final ActorRef ws;
+	private final ActorRef out;
+	private final ActorRef searchActor;
 
-    public UserActor(ActorRef ws) {
-        this.ws = ws;
-    }
+	public static Props props(ActorRef out, ActorRef searchActor) {
+		return Props.create(UserActor.class, out, searchActor);
+	}
 
-    @Override
-    public void preStart() {
-        context().actorSelection("/user/timeActor/")
-                .tell(new TimeActor.RegisterMsg(), self());
-    }
+	public UserActor(ActorRef out, ActorRef searchActor) {
+		this.out = out;
+		this.searchActor = searchActor;
+	}
 
-    private void sendTime(TimeMessage msg) {
-        final ObjectNode response = Json.newObject();
-        response.put("time", msg.message);
-        ws.tell(response, self());
-    }
+	@Override
+	public Receive createReceive() {
+		return receiveBuilder()
+			.match(JsonNode.class, this::handleWebSocketMessage)
+			.match(Messages.SearchUpdate.class, this::handleSearchUpdate)
+			.build();
+	}
 
-    public static Props props(final ActorRef wsout) {
-        return Props.create(UserActor.class, wsout);
-    }
+	private void handleWebSocketMessage(JsonNode json) {
+		if (
+			json.has("action") && json.get("action").asText().equals("search")
+		) {
+			String query = json.get("query").asText();
+			searchActor.tell(new Messages.SearchRequest(query), self());
+		}
+	}
 
-    public static final class TimeMessage {
-        public final String message;
-        public TimeMessage(String message) {
-            this.message = message;
-        }
-    }
-    @Override
-    public Receive createReceive() {
-        return receiveBuilder()
-                .match(TimeMessage.class, this::sendTime)
-                .build();
-    }
+	private void handleSearchUpdate(Messages.SearchUpdate update) {
+		out.tell(update.toJson(), self());
+	}
 }
