@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+	<head>
+		<title>YouTube Search</title>
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<style>
+			.video-item {
+				margin: 20px;
+				padding: 10px;
+				border: 1px solid #ddd;
+			}
+			.thumbnail {
+				width: 150px;
+				height: 100px;
+			}
+			#moreStats {
+				margin-left: 10px;
+				color: blue;
+				cursor: pointer;
+				text-decoration: underline;
+			}
+
+		</style>
+	</head>
+	<body>
+		<div>
+			<Center>
+			<H2> Welcome to YT Lytics</H2>
+			<input
+				type="text"
+				id="searchQuery"
+				placeholder="Enter search term"
+			/>
+			<button onclick="searchVideos()">Search</button>
+		</div>
+		<div id="results"></div>
+		</Center>
+
+
+		<script src="@routes.Assets.versioned("javascripts/main.js")" type="text/javascript"></script>
+	</body>
+</html>
