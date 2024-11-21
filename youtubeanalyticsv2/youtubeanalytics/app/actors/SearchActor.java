@@ -14,7 +14,8 @@ import play.libs.ws.WSClient;
 public class SearchActor extends AbstractActor {
 
 	private final WSClient ws;
-	private static final String YOUTUBE_API_KEY = "YOUR_API_KEY";
+	private static final String YOUTUBE_API_KEY =
+		"AIzaSyDjXQxEHYcT9PBsFI6frudaxzd4fNxTWbs";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
@@ -35,15 +36,7 @@ public class SearchActor extends AbstractActor {
 
 	private void handleSearch(Messages.SearchRequest search) {
 		// Notify that search is starting
-		getSender()
-			.tell(
-				new Messages.SearchUpdate(
-					"searching",
-					Json.newObject().put("message", "Starting search...")
-				),
-				getSelf()
-			);
-
+		ActorRef sender = sender();
 		ws
 			.url(YOUTUBE_URL + "/search")
 			.addQueryParameter("part", "snippet")
@@ -55,24 +48,23 @@ public class SearchActor extends AbstractActor {
 			.thenAccept(response -> {
 				if (response.getStatus() == 200) {
 					JsonNode rawData = response.asJson();
-					JsonNode processedData = processSearchResults(rawData);
-					getSender()
-						.tell(
-							new Messages.SearchUpdate(
-								"completed",
-								processedData
-							),
-							getSelf()
-						);
+					System.out.println("API response");
+					sender.tell(
+						new Messages.SearchUpdate(
+							"completed",
+							response.asJson()
+						),
+						getSelf()
+					);
 				} else {
-					getSender()
-						.tell(
-							new Messages.SearchUpdate(
-								"error",
-								Json.newObject().put("error", "Search failed")
-							),
-							getSelf()
-						);
+					System.out.println("Error");
+					sender.tell(
+						new Messages.SearchUpdate(
+							"error",
+							Json.newObject().put("error", "Search failed")
+						),
+						getSelf()
+					);
 				}
 			});
 	}

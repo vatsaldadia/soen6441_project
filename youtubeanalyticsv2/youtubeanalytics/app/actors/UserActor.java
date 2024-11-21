@@ -42,6 +42,7 @@ public class UserActor extends AbstractActor {
 	}
 
 	private void handleSearchUpdate(Messages.SearchUpdate update) {
+		System.out.println(update.toJson());
 		out.tell(update.toJson(), self());
 	}
 }

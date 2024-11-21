@@ -19,7 +19,7 @@
 //     document.getElementById("time-tick").appendChild(timeStr);
 // });
 
-const socket = new WebSocket(`ws://${window.location.host}/socket`);
+const socket = new WebSocket(`ws://${window.location.host}/ws`);
 
 socket.onopen = () => {
 	console.log("WebSocket connection established");
@@ -28,16 +28,18 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
 	const data = JSON.parse(event.data);
 
+	console.log(data);
 	switch (data.status) {
 		case "started":
 			showStatus("Analysis started...");
 			break;
 
 		case "searching":
-			showVideos(data.data);
 			break;
 
 		case "completed":
+			console.log(data);
+			showVideos(data.data.items);
 			showSentimentResult(data.data);
 			break;
 	}
@@ -46,7 +48,7 @@ socket.onmessage = (event) => {
 function startAnalysis(query) {
 	socket.send(
 		JSON.stringify({
-			action: "analyze",
+			action: "search",
 			query: query,
 		}),
 	);
