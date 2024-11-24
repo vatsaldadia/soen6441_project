@@ -1,0 +1,13 @@
+@() @main("Welcome to Play") {
+<div>
+	<input type="text" id="searchQuery" placeholder="Enter search query" />
+	<button
+		onclick="startAnalysis(document.getElementById('searchQuery').value)"
+	>
+		Search
+	</button>
+</div>
+
+<div id="status"></div>
+<div id="videoList"></div>
+}
