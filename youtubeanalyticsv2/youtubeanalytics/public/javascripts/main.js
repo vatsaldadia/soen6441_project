@@ -166,7 +166,7 @@ function displayResults(data) {
                 <h3><p>Title: <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">${snippet.title}</a></p></h3>
                 <h3><p>Channel: <a href="/channel/${encodeURIComponent(snippet.channelId)}" target="_blank">${snippet.channelTitle}</a></p></h3>
                 <img class="thumbnail" style="top: 0; right: 0; width: 100px; height: auto;" src="${snippet.thumbnails.default.url}">
-                <h3><p>Description:</h3> ${snippet.description}</p>
+                <h3><p>Description:</h3> ${item.description}</p>
                 <b><p>Flesch-Kincaid Grade Level:</b> ${item.fleschKincaidGradeLevel || "N/A"}</p>
                 <b><p>Flesch Reading Ease Score:</b> ${item.fleschReadingScore || "N/A"}</p>
                 <a href="/tag?video_id=${videoId}" target="_blank">Tags</a>
