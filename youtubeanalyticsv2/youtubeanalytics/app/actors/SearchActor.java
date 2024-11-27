@@ -33,7 +33,7 @@ public class SearchActor extends AbstractActorWithTimers {
 //	private AsyncCacheApi cache;
 	private ActorRef readabilityCalculatorActor;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyDjXQxEHYcT9PBsFI6frudaxzd4fNxTWbs";
+		"AIzaSyBnujY6PQi1cXVkf02_epIdIVKT-ywT2vc";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
@@ -59,29 +59,23 @@ public class SearchActor extends AbstractActorWithTimers {
 
 	@Override
 	public void preStart() {
-		getTimers().startPeriodicTimer("Timer", new Tick(this.query), Duration.create(2, TimeUnit.SECONDS));
-//		handleSearch();
-//		System.out.println("SearchActor: preStart: " + this.query);
+		getTimers().startPeriodicTimer("Timer", new Tick(this.query), Duration.create(60, TimeUnit.SECONDS));
 	}
 
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
-				.match(Tick.class, message -> {
-					if (message.getQuery().equals(this.query)) {
-						handleSearch();
-					}
-				})
+//				.match(Tick.class, message -> {
+//					if (message.getQuery().equals(this.query)) {
+//						handleSearch();
+//					}
+//				})
 				.match(RegisterMsg.class, message -> {
 					if (message.getQuery().equals(this.query)) {
 						userActorList.add(getSender());
+						handleSearch();
 					}
 				})
-//				.match(SearchResponse.class, message -> {
-//					userActorList.forEach(userActor -> {
-//							userActor.tell(message.response, getSelf());
-//						});
-//				})
 				.match(ReadabilityCalculator.ReadabilityResults.class, message -> {
 					ObjectNode videoNode = videoNodes.get(message.videoId);
 					videoNode.put("fleschKincaidGradeLevel", String.format("%.2f", message.gradeLevel));
@@ -132,7 +126,7 @@ public class SearchActor extends AbstractActorWithTimers {
 		if (!userActorList.isEmpty()) {
 			ws.url(YOUTUBE_URL + "/search")
 				.addQueryParameter("part", "snippet")
-				.addQueryParameter("maxResults", "2")
+				.addQueryParameter("maxResults", "1")
 				.addQueryParameter("q", query)
 				.addQueryParameter("type", "video")
 				.addQueryParameter("order", "date")
@@ -140,20 +134,15 @@ public class SearchActor extends AbstractActorWithTimers {
 				.get()
 				.thenCompose(youtubeResponse -> {
 					JsonNode rawData = youtubeResponse.asJson();
-					System.out.println("API Response");
-//					sender.tell(
-//						new Messages.SearchUpdate(
-//							"completed",
-//							response.asJson()
-//						),
-//						getSelf()
-//					);
+//					System.out.println("API Response: " + self());
+//					System.out.println("rawData: " + rawData);
 					JsonNode items = rawData.get("items");
+//					System.out.println(items);
 					ObjectNode modifiedResponse = rawData.deepCopy();
 					ArrayNode modifiedItems = JsonNodeFactory.instance.arrayNode();
 					List<CompletableFuture<ObjectNode>> futures = new ArrayList<>();
 					for (JsonNode item : items) {
-//						System.out.println("hi");
+//						System.out.println("item: " + item);
 						ObjectNode videoNode = (ObjectNode) item;
 						String videoId = videoNode.get("id").get("videoId").asText();
 						videoNodes.put(videoId, videoNode);
@@ -169,8 +158,9 @@ public class SearchActor extends AbstractActorWithTimers {
 						});
 						futures.add(future.toCompletableFuture());
 					}
+//					System.out.println("futures: " + futures);
 
-					CompletionStage<ObjectNode> searchResponse = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenApply(v -> {
+					CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).thenApply(v -> {
 						List<Double> grades = new ArrayList<>();
 						List<Double> scores = new ArrayList<>();
 						futures.stream()
@@ -178,12 +168,14 @@ public class SearchActor extends AbstractActorWithTimers {
 								.map(future -> future.getNow(null))
 								.limit(10)
 								.forEach(videoNode -> {
+									System.out.println("videoNode: " + videoNode);
 									double grade = Double.parseDouble(videoNode.get("fleschKincaidGradeLevel").asText());
 									double score = Double.parseDouble(videoNode.get("fleschReadingScore").asText());
 									grades.add(grade);
 									scores.add(score);
 									modifiedItems.add(videoNode);
 								});
+//						System.out.println("modifiedItems: " + modifiedItems);
 
 						double gradeAvg = grades
 								.stream()
@@ -199,14 +191,15 @@ public class SearchActor extends AbstractActorWithTimers {
 						modifiedResponse.put("fleschKincaidGradeLevelAvg", String.format("%.2f", gradeAvg));
 						modifiedResponse.put("fleschReadingScoreAvg", String.format("%.2f", scoreAvg));
 						modifiedResponse.set("items", modifiedItems);
+						modifiedResponse.put("query", query);
 
-//						System.out.println(modifiedResponse);
+//						System.out.println("modifiedResponse: " + modifiedResponse);
 
 						userActorList.forEach(userActor -> {
 							userActor.tell(new SearchResponse(query, modifiedResponse), getSelf());
 						});
 //						self().tell(new SearchResponse(query, modifiedResponse), getSelf());
-						System.out.println("message sent");
+//						System.out.println("message sent");
 
 						return null;
 					});

@@ -49,7 +49,7 @@ public class UserActor extends AbstractActor {
 			.match(JsonNode.class, this::handleWebSocketMessage)
 //			.match(Messages.SearchUpdate.class, this::handleSearchUpdate)
 			.match(SearchActor.SearchResponse.class, message -> {
-				System.out.println("UserActor got search response");
+//				System.out.println("UserActor got search response");
 				searchResponses.put(message.query, message.response);
 				handleSearchUpdate();
 			})
@@ -71,17 +71,15 @@ public class UserActor extends AbstractActor {
 	}
 
 	private void handleSearchUpdate() {
-		ArrayNode queries = JsonNodeFactory.instance.arrayNode();
+		ArrayNode responses = JsonNodeFactory.instance.arrayNode();
 		searchHistory.stream()
 				.limit(5)
 				.forEach(query -> {
-					ObjectNode response = Json.newObject();
-					response.set(query, searchResponses.get(query));
-					queries.add(response);
+					responses.add(searchResponses.get(query));
 				});
 		ObjectNode result = Json.newObject();
-		result.set("searches", queries);
-		System.out.println(result);
+		result.set("responses", responses);
+//		System.out.println(result);
 		wsout.tell(result, self());
 	}
 }

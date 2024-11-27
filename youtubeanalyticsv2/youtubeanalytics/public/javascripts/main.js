@@ -91,6 +91,13 @@ socket.onmessage = (event) => {
 	const data = JSON.parse(event.data);
 	console.log("Received data:", data);
 
+	$("#results").empty()
+
+	for (let i = 0; i < data.responses.length; i++) {
+		// console.log(data.responses[i]);
+		displayResults(data.responses[i]);
+	}
+
 	// switch (data.status) {
 	// 	case "started":
 	// 		$("#results").empty().append("<h2>Searching...</h2>");
@@ -137,11 +144,11 @@ function searchVideos() {
 }
 
 function displayResults(data) {
-	$("#results").empty();
+	// $("#results").empty();
 
 	// Add search header and stats
 	$("#results").append(`
-        <h2>Search term: ${$("#searchQuery").val()}</h2>
+        <h2>Search term: ${data.query}</h2>
         <b>Word Stats:</b><a id="moreStats" href="/wordstats/${encodeURIComponent($("#searchQuery").val())}">More Stats</a><br>
         <body>
             <b>Sentiment:</b> ${data.sentiment || "N/A"}<br>
