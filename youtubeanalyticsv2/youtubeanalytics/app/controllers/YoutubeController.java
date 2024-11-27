@@ -1,14 +1,22 @@
 package controllers;
 
+import actors.HelperActor;
 import actors.SearchActor;
+import actors.SentimentAnalysisActor;
 import actors.UserActor;
+import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Props;
 import akka.stream.Materializer;
 import com.google.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
+import play.cache.AsyncCacheApi;
 import play.libs.streams.ActorFlow;
 import play.libs.ws.WSClient;
 import play.mvc.*;
+import services.ReadabilityCalculator;
 
 /**
  * This controller contains an action to handle HTTP requests
@@ -19,18 +27,33 @@ public class YoutubeController extends Controller {
 	private final ActorSystem actorSystem;
 	private final Materializer materializer;
 	private final WSClient ws;
-	private final ActorRef searchActor;
+	private AsyncCacheApi cache;
+	private final ActorRef readabilityCalculatorActor;
+	private final ActorRef sentimentAnalysisActor;
+	//	private final ActorRef helperActor;
+
+	private Map<String, ActorRef> searchActors;
 
 	@Inject
 	public YoutubeController(
 		WSClient ws,
 		ActorSystem system,
 		Materializer materializer
+		//		AsyncCacheApi cache
 	) {
 		this.ws = ws;
 		this.actorSystem = system;
 		this.materializer = materializer;
-		this.searchActor = system.actorOf(SearchActor.props(ws));
+		this.searchActors = new HashMap<>();
+		//		this.cache = cache;
+		this.readabilityCalculatorActor = system.actorOf(
+			ReadabilityCalculator.props()
+		);
+		this.sentimentAnalysisActor = system.actorOf(
+			SentimentAnalysisActor.props()
+		);
+		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
+		//		system.actorOf(Props.create(TestActor.class));
 	}
 
 	/**
@@ -46,10 +69,28 @@ public class YoutubeController extends Controller {
 	public WebSocket ws() {
 		return WebSocket.Json.accept(request ->
 			ActorFlow.actorRef(
-				out -> UserActor.props(out, searchActor),
+				wsout -> UserActor.props(wsout, this),
 				this.actorSystem,
 				this.materializer
 			)
 		);
+	}
+
+	public ActorRef getSearchActor(String query) {
+		if (!searchActors.containsKey(query)) {
+			searchActors.put(
+				query,
+				this.actorSystem.actorOf(
+						SearchActor.props(
+							ws,
+							query,
+							cache,
+							readabilityCalculatorActor,
+							sentimentAnalysisActor
+						)
+					)
+			);
+		}
+		return searchActors.get(query);
 	}
 }

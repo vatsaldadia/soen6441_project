@@ -80,32 +80,53 @@
 //
 
 const socket = new WebSocket(`ws://${window.location.host}/ws`);
+let keepAliveInterval;
 
 socket.onopen = () => {
 	console.log("WebSocket connection established");
+	startKeepAlive();
 };
 
 socket.onmessage = (event) => {
 	const data = JSON.parse(event.data);
 	console.log("Received data:", data);
 
-	switch (data.status) {
-		case "started":
-			$("#results").empty().append("<h2>Searching...</h2>");
-			break;
+	$("#results").empty()
 
-		case "searching":
-			break;
-
-		case "completed":
-			displayResults(data.data);
-			break;
-
-		case "error":
-			$("#results").empty().append(`<h2>Error: ${data.data.error}</h2>`);
-			break;
+	for (let i = 0; i < data.responses.length; i++) {
+		// console.log(data.responses[i]);
+		displayResults(data.responses[i]);
 	}
+
+	// switch (data.status) {
+	// 	case "started":
+	// 		$("#results").empty().append("<h2>Searching...</h2>");
+	// 		break;
+	//
+	// 	case "searching":
+	// 		break;
+	//
+	// 	case "completed":
+	// 		displayResults(data.data);
+	// 		break;
+	//
+	// 	case "error":
+	// 		$("#results").empty().append(`<h2>Error: ${data.data.error}</h2>`);
+	// 		break;
+	// }
 };
+
+function startKeepAlive() {
+	keepAliveInterval = setInterval(() => {
+		if (socket.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify({ action: "ping" }));
+		}
+	}, 25000); // Send a ping every 25 seconds
+}
+
+function stopKeepAlive() {
+	clearInterval(keepAliveInterval);
+}
 
 function searchVideos() {
 	const query = $("#searchQuery").val();
@@ -123,11 +144,11 @@ function searchVideos() {
 }
 
 function displayResults(data) {
-	$("#results").empty();
+	// $("#results").empty();
 
 	// Add search header and stats
 	$("#results").append(`
-        <h2>Search term: ${$("#searchQuery").val()}</h2>
+        <h2>Search term: ${data.query}</h2>
         <b>Word Stats:</b><a id="moreStats" href="/wordstats/${encodeURIComponent($("#searchQuery").val())}">More Stats</a><br>
         <body>
             <b>Sentiment:</b> ${data.sentiment || "N/A"}<br>
@@ -145,7 +166,7 @@ function displayResults(data) {
                 <h3><p>Title: <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">${snippet.title}</a></p></h3>
                 <h3><p>Channel: <a href="/channel/${encodeURIComponent(snippet.channelId)}" target="_blank">${snippet.channelTitle}</a></p></h3>
                 <img class="thumbnail" style="top: 0; right: 0; width: 100px; height: auto;" src="${snippet.thumbnails.default.url}">
-                <h3><p>Description:</h3> ${snippet.description}</p>
+                <h3><p>Description:</h3> ${item.description}</p>
                 <b><p>Flesch-Kincaid Grade Level:</b> ${item.fleschKincaidGradeLevel || "N/A"}</p>
                 <b><p>Flesch Reading Ease Score:</b> ${item.fleschReadingScore || "N/A"}</p>
                 <a href="/tag?video_id=${videoId}" target="_blank">Tags</a>
@@ -159,6 +180,7 @@ function displayResults(data) {
 socket.onerror = (error) => {
 	console.error("WebSocket error:", error);
 	$("#results").empty().append("<h2>Error connecting to server</h2>");
+	stopKeepAlive();
 };
 
 socket.onclose = (event) => {
@@ -166,6 +188,7 @@ socket.onclose = (event) => {
 	if (!event.wasClean) {
 		$("#results").empty().append("<h2>Lost connection to server</h2>");
 	}
+	stopKeepAlive();
 };
 
 // Cleanup on page unload
