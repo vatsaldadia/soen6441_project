@@ -2,7 +2,7 @@ package controllers;
 
 import actors.HelperActor;
 import actors.SearchActor;
-import actors.TestActor;
+import actors.SentimentAnalysisActor;
 import actors.UserActor;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
@@ -10,14 +10,13 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.stream.Materializer;
 import com.google.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
 import play.cache.AsyncCacheApi;
 import play.libs.streams.ActorFlow;
 import play.libs.ws.WSClient;
 import play.mvc.*;
 import services.ReadabilityCalculator;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This controller contains an action to handle HTTP requests
@@ -30,7 +29,8 @@ public class YoutubeController extends Controller {
 	private final WSClient ws;
 	private AsyncCacheApi cache;
 	private final ActorRef readabilityCalculatorActor;
-//	private final ActorRef helperActor;
+	private final ActorRef sentimentAnalysisActor;
+	//	private final ActorRef helperActor;
 
 	private Map<String, ActorRef> searchActors;
 
@@ -39,16 +39,21 @@ public class YoutubeController extends Controller {
 		WSClient ws,
 		ActorSystem system,
 		Materializer materializer
-//		AsyncCacheApi cache
+		//		AsyncCacheApi cache
 	) {
 		this.ws = ws;
 		this.actorSystem = system;
 		this.materializer = materializer;
 		this.searchActors = new HashMap<>();
-//		this.cache = cache;
-		this.readabilityCalculatorActor = system.actorOf(ReadabilityCalculator.props());
-//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
-//		system.actorOf(Props.create(TestActor.class));
+		//		this.cache = cache;
+		this.readabilityCalculatorActor = system.actorOf(
+			ReadabilityCalculator.props()
+		);
+		this.sentimentAnalysisActor = system.actorOf(
+			SentimentAnalysisActor.props()
+		);
+		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
+		//		system.actorOf(Props.create(TestActor.class));
 	}
 
 	/**
@@ -73,7 +78,18 @@ public class YoutubeController extends Controller {
 
 	public ActorRef getSearchActor(String query) {
 		if (!searchActors.containsKey(query)) {
-			searchActors.put(query, this.actorSystem.actorOf(SearchActor.props(ws, query, cache, readabilityCalculatorActor)));
+			searchActors.put(
+				query,
+				this.actorSystem.actorOf(
+						SearchActor.props(
+							ws,
+							query,
+							cache,
+							readabilityCalculatorActor,
+							sentimentAnalysisActor
+						)
+					)
+			);
 		}
 		return searchActors.get(query);
 	}
