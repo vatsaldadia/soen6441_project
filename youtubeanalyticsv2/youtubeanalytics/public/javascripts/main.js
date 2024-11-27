@@ -80,32 +80,46 @@
 //
 
 const socket = new WebSocket(`ws://${window.location.host}/ws`);
+let keepAliveInterval;
 
 socket.onopen = () => {
 	console.log("WebSocket connection established");
+	startKeepAlive();
 };
 
 socket.onmessage = (event) => {
 	const data = JSON.parse(event.data);
 	console.log("Received data:", data);
 
-	switch (data.status) {
-		case "started":
-			$("#results").empty().append("<h2>Searching...</h2>");
-			break;
-
-		case "searching":
-			break;
-
-		case "completed":
-			displayResults(data.data);
-			break;
-
-		case "error":
-			$("#results").empty().append(`<h2>Error: ${data.data.error}</h2>`);
-			break;
-	}
+	// switch (data.status) {
+	// 	case "started":
+	// 		$("#results").empty().append("<h2>Searching...</h2>");
+	// 		break;
+	//
+	// 	case "searching":
+	// 		break;
+	//
+	// 	case "completed":
+	// 		displayResults(data.data);
+	// 		break;
+	//
+	// 	case "error":
+	// 		$("#results").empty().append(`<h2>Error: ${data.data.error}</h2>`);
+	// 		break;
+	// }
 };
+
+function startKeepAlive() {
+	keepAliveInterval = setInterval(() => {
+		if (socket.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify({ action: "ping" }));
+		}
+	}, 25000); // Send a ping every 25 seconds
+}
+
+function stopKeepAlive() {
+	clearInterval(keepAliveInterval);
+}
 
 function searchVideos() {
 	const query = $("#searchQuery").val();
@@ -159,6 +173,7 @@ function displayResults(data) {
 socket.onerror = (error) => {
 	console.error("WebSocket error:", error);
 	$("#results").empty().append("<h2>Error connecting to server</h2>");
+	stopKeepAlive();
 };
 
 socket.onclose = (event) => {
@@ -166,6 +181,7 @@ socket.onclose = (event) => {
 	if (!event.wasClean) {
 		$("#results").empty().append("<h2>Lost connection to server</h2>");
 	}
+	stopKeepAlive();
 };
 
 // Cleanup on page unload
