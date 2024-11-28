@@ -1,7 +1,9 @@
 package actors;
 
 import actors.SentimentAnalysisActor;
+import actors.WordStatsActor;
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.pattern.Patterns;
@@ -27,6 +29,8 @@ import play.libs.ws.WSResponse;
 import scala.concurrent.duration.Duration;
 import services.ReadabilityCalculator;
 
+import static actors.WordStatsActor.wordStatsMap;
+
 public class SearchActor extends AbstractActorWithTimers {
 
 	private final List<ActorRef> userActorList;
@@ -37,6 +41,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	//	private AsyncCacheApi cache;
 	private ActorRef readabilityCalculatorActor;
 	private ActorRef sentimentAnalysisActor;
+	private ActorRef wordStatsActor;
 	private static final String YOUTUBE_API_KEY =
 		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
 	private static final String YOUTUBE_URL =
@@ -47,7 +52,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		String query,
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
-		ActorRef sentimentAnalysisActor
+		ActorRef sentimentAnalysisActor,
+		ActorRef wordStatsActor
 	) {
 		this.ws = ws;
 		this.query = query;
@@ -56,6 +62,7 @@ public class SearchActor extends AbstractActorWithTimers {
 		this.videoNodes = new HashMap<>();
 		this.readabilityCalculatorActor = readabilityCalculatorActor;
 		this.sentimentAnalysisActor = sentimentAnalysisActor;
+		this.wordStatsActor = wordStatsActor;
 		this.searchSentiment = ":-|||||";
 	}
 
@@ -64,7 +71,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		String query,
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
-		ActorRef sentimentAnalysisActor
+		ActorRef sentimentAnalysisActor,
+		ActorRef wordStatsActor
 	) {
 		return Props.create(
 			SearchActor.class,
@@ -72,7 +80,8 @@ public class SearchActor extends AbstractActorWithTimers {
 			query,
 			cache,
 			readabilityCalculatorActor,
-			sentimentAnalysisActor
+			sentimentAnalysisActor,
+			wordStatsActor
 		);
 	}
 
@@ -134,6 +143,10 @@ public class SearchActor extends AbstractActorWithTimers {
                     System.out.println("Terminating SearchActor");
                     getContext().stop(getSelf());
                 })
+				.match(WordStatsActor.WordStatsResults.class, message -> {
+					JsonNode wordStats = message.wordStats;
+					wordStatsMap.put(message.videoId, wordStats);
+				})
 			.build();
 	}
 
@@ -194,6 +207,7 @@ public class SearchActor extends AbstractActorWithTimers {
 					JsonNode rawData = youtubeResponse.asJson();
 					System.out.println("Line0: API Response");
 					JsonNode items = rawData.get("items");
+					List<String> allDescriptions = new ArrayList<>();
 					ObjectNode modifiedResponse = rawData.deepCopy();
 					ArrayNode modifiedItems =
 						JsonNodeFactory.instance.arrayNode();
@@ -304,6 +318,9 @@ public class SearchActor extends AbstractActorWithTimers {
 						modifiedResponse.put("query", query);
 
 						System.out.println("Line4. Ask sentiment analysis actor");
+						// Send the descriptions to the WordStatsService
+						wordStatsActor.tell(new WordStatsActor.InitWordStatsService(query, descriptions), getSelf());
+
 						// 4. Ask sentiment analysis actor
 						return Patterns.ask(
 							sentimentAnalysisActor,

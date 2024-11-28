@@ -5,11 +5,13 @@ import actors.SearchActor;
 import actors.SentimentAnalysisActor;
 import actors.SupervisorActor;
 import actors.UserActor;
+import actors.*;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.stream.Materializer;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +35,7 @@ public class YoutubeController extends Controller {
 	private final ActorRef sentimentAnalysisActor;
 	private final ActorRef supervisorActor;
 	
+	private final ActorRef wordStatsActor;
 	//	private final ActorRef helperActor;
 
 	private Map<String, ActorRef> searchActors;
@@ -59,6 +62,9 @@ public class YoutubeController extends Controller {
             SupervisorActor.props(this.actorSystem, ws),
             "supervisorActor"
         );
+		this.wordStatsActor = system.actorOf(
+				WordStatsActor.props()
+		);
 		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
 		//		system.actorOf(Props.create(TestActor.class));
 	}
@@ -71,6 +77,11 @@ public class YoutubeController extends Controller {
 	 */
 	public Result index() {
 		return ok(views.html.search.render());
+	}
+
+	public Result getWordStats(String query) {
+		JsonNode wordStats = WordStatsActor.wordStatsMap.get(query);
+		return ok(views.html.wordstats.render(wordStats, query));
 	}
 
 	public WebSocket ws() {
@@ -93,7 +104,7 @@ public class YoutubeController extends Controller {
 							query,
 							cache,
 							readabilityCalculatorActor,
-							sentimentAnalysisActor
+							sentimentAnalysisActor, wordStatsActor
 						)
 					)
 			);

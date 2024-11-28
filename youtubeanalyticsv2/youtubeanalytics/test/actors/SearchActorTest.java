@@ -107,7 +107,8 @@ public class SearchActorTest {
                 "test query", 
                 mockCache, 
                 readabilityProbe.getRef(), 
-                sentimentProbe.getRef()
+                sentimentProbe.getRef(),
+                null
             ), "searchActor");
 
             System.out.println(searchActor);

@@ -51,7 +51,7 @@ public class SupervisorActorTest {
             watch(supervisorActor);
 
             // Simulate termination of child actors
-            ActorRef searchActor = system.actorOf(SearchActor.props(mockWsClient, "test query", null, null, null), "searchActor");
+            ActorRef searchActor = system.actorOf(SearchActor.props(mockWsClient, "test query", null, null, null, null), "searchActor");
             ActorRef helperActor = system.actorOf(HelperActor.props(system, mockWsClient), "helperActor");
             ActorRef sentimentAnalysisActor = system.actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
 

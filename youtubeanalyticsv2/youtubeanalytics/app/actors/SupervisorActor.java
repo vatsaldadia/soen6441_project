@@ -28,7 +28,7 @@ public class SupervisorActor extends AbstractActor {
     }
 
     public SupervisorActor(ActorSystem system, WSClient ws) {
-        searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null), "searchActor");
+        searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null, null), "searchActor");
         helperActor = getContext().actorOf(HelperActor.props(system, ws), "helperActor");
         sentimentAnalysisActor = getContext().actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
         readibilityCalculatorActor = getContext().actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
@@ -46,7 +46,7 @@ public class SupervisorActor extends AbstractActor {
                 .match(Terminated.class, t -> {
                     if (t.getActor().equals(searchActor)) {
                         System.out.println("Search actor terminated");
-                        getContext().actorOf(SearchActor.props(null, "test query", null, null, null), "searchActor");
+                        getContext().actorOf(SearchActor.props(null, "test query", null, null, null, null), "searchActor");
                     } else if (t.getActor().equals(helperActor)) {
                         System.out.println("Helper actor terminated");
                         getContext().actorOf(HelperActor.props(null, null), "helperActor");
