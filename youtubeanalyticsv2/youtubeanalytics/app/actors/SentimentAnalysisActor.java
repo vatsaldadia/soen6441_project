@@ -2,6 +2,8 @@ package actors;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import messages.Messages.TerminateActor;
+
 import java.util.List;
 import services.SentimentAnalyzer;
 
@@ -20,13 +22,17 @@ public class SentimentAnalysisActor extends AbstractActor {
 				String sentiment = SentimentAnalyzer.analyzeSentiment(
 					message.descriptions
 				);
-				System.out.println(sentiment);
+				// System.out.println(sentiment);
 				getSender()
 					.tell(
 						new SentimentAnalysisResults(message.query, sentiment),
 						getSelf()
 					);
 			})
+			.match(TerminateActor.class, message -> {
+                    System.out.println("Terminating SearchActor");
+                    getContext().stop(getSelf());
+                })
 			.build();
 	}
 

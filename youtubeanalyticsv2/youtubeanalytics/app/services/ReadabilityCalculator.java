@@ -15,9 +15,10 @@ public class ReadabilityCalculator extends AbstractActor{
     public Receive createReceive() {
         return receiveBuilder()
                 .match(initReadabilityCalculatorService.class, message -> {
-//                    getSender().tell(new initReadabilityCalculatorService("Readability Calculator has been initialized"), getSelf());
+
                     double gradeLevel = calculateFleschKincaidGradeLevel(message.description);
                     double readingScore = calculateFleschReadingScore(message.description);
+                    System.out.println("Readibility init");
                     getSender().tell(new ReadabilityResults(message.videoId, gradeLevel, readingScore), getSelf());
                 })
                 .build();
@@ -40,6 +41,9 @@ public class ReadabilityCalculator extends AbstractActor{
             this.videoId = videoId;
             this.gradeLevel = gradeLevel;
             this.readingScore = readingScore;
+            System.out.println("Readibility results");
+            System.out.println("Grade Level: " + gradeLevel);
+            System.out.println("Reading Score: " + readingScore);
         }
     }
 
@@ -85,6 +89,7 @@ public class ReadabilityCalculator extends AbstractActor{
         int totalSentences = countSentences(description);
         int totalSyllables = countSyllables(description);
 
+        System.out.println("Total words: " + totalWords);
         return (
                 0.39 * ((double) totalWords / totalSentences) +
                         11.8 * ((double) totalSyllables / totalWords) -

@@ -79,7 +79,6 @@ public class UserActor extends AbstractActor {
 				});
 		ObjectNode result = Json.newObject();
 		result.set("responses", responses);
-//		System.out.println(result);
 		wsout.tell(result, self());
 	}
 }

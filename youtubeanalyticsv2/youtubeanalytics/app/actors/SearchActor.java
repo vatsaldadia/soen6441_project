@@ -7,6 +7,8 @@ import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.pattern.Patterns;
+import messages.Messages.TerminateActor;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -16,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	private ActorRef sentimentAnalysisActor;
 	private ActorRef wordStatsActor;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyBayKpnm9_09dL7QQ6LY84XWPOjBDp_mWs";
+		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
@@ -110,6 +111,7 @@ public class SearchActor extends AbstractActorWithTimers {
 				}
 			})
 			.match(RegisterMsg.class, message -> {
+				
 				if (message.getQuery().equals(this.query)) {
 					userActorList.add(getSender());
 					handleSearch();
@@ -137,6 +139,10 @@ public class SearchActor extends AbstractActorWithTimers {
 					this.searchSentiment = message.sentiment;
 				}
 			)
+			 .match(TerminateActor.class, message -> {
+                    System.out.println("Terminating SearchActor");
+                    getContext().stop(getSelf());
+                })
 				.match(WordStatsActor.WordStatsResults.class, message -> {
 					JsonNode wordStats = message.wordStats;
 					wordStatsMap.put(message.videoId, wordStats);
@@ -185,165 +191,7 @@ public class SearchActor extends AbstractActorWithTimers {
 		}
 	}
 
-	// private void handleSearch() {
-	// 	if (!userActorList.isEmpty()) {
-	// 		ws
-	// 			.url(YOUTUBE_URL + "/search")
-	// 			.addQueryParameter("part", "snippet")
-	// 			.addQueryParameter("maxResults", "1")
-	// 			.addQueryParameter("q", query)
-	// 			.addQueryParameter("type", "video")
-	// 			.addQueryParameter("order", "date")
-	// 			.addQueryParameter("key", YOUTUBE_API_KEY)
-	// 			.get()
-	// 			.thenCompose(youtubeResponse -> {
-	// 				JsonNode rawData = youtubeResponse.asJson();
-	// 				System.out.println("Line0: API Response");
-	// 				//					sender.tell(
-	// 				//						new Messages.SearchUpdate(
-	// 				//							"completed",
-	// 				//							response.asJson()
-	// 				//						),
-	// 				//						getSelf()
-	// 				//					);
-	// 				JsonNode items = rawData.get("items");
-	// 				// System.out.println("Line1");
-	// 				System.out.println(rawData);
-	// 				ObjectNode modifiedResponse = rawData.deepCopy();
-	// 				ArrayNode modifiedItems =
-	// 					JsonNodeFactory.instance.arrayNode();
-	// 				List<CompletableFuture<ObjectNode>> futures =
-	// 					new ArrayList<>();
-	// 				System.out.println("Line2");
-	// 				// System.out.println(rawData);
-	// 				//
-	// 				for (JsonNode item : items) {
-	// 					ObjectNode videoNode = (ObjectNode) item;
-	// 					String videoId = videoNode
-	// 						.get("id")
-	// 						.get("videoId")
-	// 						.asText();
-	// 					videoNodes.put(videoId, videoNode);
-	// 					CompletionStage<ObjectNode> future = getVideo(
-	// 						videoId
-	// 					).thenApply(response -> {
-	// 						String description = response
-	// 							.asJson()
-	// 							.get("items")
-	// 							.get(0)
-	// 							.get("snippet")
-	// 							.get("description")
-	// 							.asText();
-	// 						System.out.println("Line3");
-
-	// 						readabilityCalculatorActor.tell(
-	// 							new ReadabilityCalculator.initReadabilityCalculatorService(
-	// 								videoId,
-	// 								description
-	// 							),
-	// 							getSelf()
-	// 						);
-
-	// 						videoNode.put("description", description);
-	// 						return videoNode;
-	// 					});
-	// 					futures.add(future.toCompletableFuture());
-	// 				}
-	// 				//					System.out.println("futures: " + futures);
-
-	// 				System.out.println("Line4");
-
-//	 				CompletableFuture.allOf(
-//	 					futures.toArray(new CompletableFuture[0])
-//	 				).thenApply(v -> {
-//	 					List<Double> grades = new ArrayList<>();
-//	 					List<Double> scores = new ArrayList<>();
-//	 					List<String> descriptions = new ArrayList<>();
-//	 					 CompletableFuture<Void> delay =
-//	 					 	CompletableFuture.runAsync(() -> {
-//	 					 		try {
-//	 					 			Thread.sleep(4000);
-//	 					 		} catch (InterruptedException e) {
-//	 					 			e.printStackTrace();
-//	 					 		}
-//	 					 	});
-//
-//	 					 // This will block until the delay is complete
-//	 					 delay.join();
-	// 					System.out.println("Line5.1");
-	// 					futures
-	// 						.stream()
-	// 						.map(CompletionStage::toCompletableFuture)
-	// 						.map(future -> future.getNow(null))
-	// 						.limit(10)
-	// 						.forEach(videoNode -> {
-	// 							double grade = Double.parseDouble(
-	// 								videoNode
-	// 									.get("fleschKincaidGradeLevel")
-	// 									.asText()
-	// 							);
-	// 							System.out.println("Line5");
-	// 							double score = Double.parseDouble(
-	// 								videoNode.get("fleschReadingScore").asText()
-	// 							);
-	// 							System.out.println("Line5.2");
-	// 							grades.add(grade);
-	// 							scores.add(score);
-	// 							descriptions.add(
-	// 								videoNode.get("description").asText()
-	// 							);
-	// 							modifiedItems.add(videoNode);
-	// 							System.out.println("Line5.3");
-	// 						});
-	// 					// System.out.println("modifiedItems: " + modifiedItems);
-
-	// 					double gradeAvg = grades
-	// 						.stream()
-	// 						.mapToDouble(Double::doubleValue)
-	// 						.average()
-	// 						.orElse(0.0);
-	// 					double scoreAvg = scores
-	// 						.stream()
-	// 						.mapToDouble(Double::doubleValue)
-	// 						.average()
-	// 						.orElse(0.0);
-
-	// 					modifiedResponse.put(
-	// 						"fleschKincaidGradeLevelAvg",
-	// 						String.format("%.2f", gradeAvg)
-	// 					);
-	// 					modifiedResponse.put(
-	// 						"fleschReadingScoreAvg",
-	// 						String.format("%.2f", scoreAvg)
-	// 					);
-	// 					modifiedResponse.set("items", modifiedItems);
-	// 					modifiedResponse.put("query", query);
-
-	// 					sentimentAnalysisActor.tell(
-	// 						new SentimentAnalysisActor.initSentimentAnalyzerService(
-	// 							query,
-	// 							descriptions
-	// 						),
-	// 						getSelf()
-	// 					);
-	// 					System.out.println("Line6");
-
-	// 					modifiedResponse.put("sentiment", this.searchSentiment);
-
-	// 					userActorList.forEach(userActor -> {
-	// 						userActor.tell(
-	// 							new SearchResponse(query, modifiedResponse),
-	// 							getSelf()
-	// 						);
-	// 					});
-	// 					System.out.println("Line7");
-
-	// 					return null;
-	// 				});
-	// 				return null;
-	// 			});
-	// 	}
-	// }
+	
 	private void handleSearch() {
 		if (!userActorList.isEmpty()) {
 			ws
@@ -366,6 +214,8 @@ public class SearchActor extends AbstractActorWithTimers {
 					List<CompletableFuture<ObjectNode>> futures =
 						new ArrayList<>();
 
+					System.out.println("Line1. Get all videos and their descriptions");
+					System.out.println(items);
 					// 1. Get all videos and their descriptions
 					for (JsonNode item : items) {
 						ObjectNode videoNode = (ObjectNode) item;
@@ -379,14 +229,12 @@ public class SearchActor extends AbstractActorWithTimers {
 							videoId
 						).thenCompose(response -> {
 							String description = response
-								.asJson()
-								.get("items")
-								.get(0)
-								.get("snippet")
-								.get("description")
-								.asText();
-							allDescriptions.add(description);
-
+							.asJson()
+							.get("items")
+							.get(0)
+							.get("snippet")
+							.get("description")
+							.asText();
 							// 2. For each video, ask readability actor
 							return Patterns.ask(
 								readabilityCalculatorActor,
@@ -396,9 +244,10 @@ public class SearchActor extends AbstractActorWithTimers {
 								),
 								java.time.Duration.ofSeconds(5)
 							).thenApply(readabilityResult -> {
+								System.out.println("readibility calculator");
 								ReadabilityCalculator.ReadabilityResults results =
 									(ReadabilityCalculator.ReadabilityResults) readabilityResult;
-
+								System.out.println(results);
 								videoNode.put("description", description);
 								videoNode.put(
 									"fleschKincaidGradeLevel",
@@ -413,7 +262,7 @@ public class SearchActor extends AbstractActorWithTimers {
 						});
 						futures.add(future.toCompletableFuture());
 					}
-
+					System.out.println("Line3. After all videos are processed with readability");
 					// 3. After all videos are processed with readability
 					return CompletableFuture.allOf(
 						futures.toArray(new CompletableFuture[0])
@@ -421,6 +270,7 @@ public class SearchActor extends AbstractActorWithTimers {
 						List<Double> grades = new ArrayList<>();
 						List<Double> scores = new ArrayList<>();
 						List<String> descriptions = new ArrayList<>();
+						System.out.println("Line3.1");
 
 						futures
 							.stream()
@@ -442,6 +292,7 @@ public class SearchActor extends AbstractActorWithTimers {
 								);
 								modifiedItems.add(videoNode);
 							});
+						System.out.println("Line3.2");
 
 						double gradeAvg = grades
 							.stream()
@@ -462,11 +313,13 @@ public class SearchActor extends AbstractActorWithTimers {
 							"fleschReadingScoreAvg",
 							String.format("%.2f", scoreAvg)
 						);
+						System.out.println("Line3.3");
 						modifiedResponse.set("items", modifiedItems);
 						modifiedResponse.put("query", query);
 
+						System.out.println("Line4. Ask sentiment analysis actor");
 						// Send the descriptions to the WordStatsService
-						wordStatsActor.tell(new WordStatsActor.InitWordStatsService(query, allDescriptions), getSelf());
+						wordStatsActor.tell(new WordStatsActor.InitWordStatsService(query, descriptions), getSelf());
 
 						// 4. Ask sentiment analysis actor
 						return Patterns.ask(
@@ -485,6 +338,7 @@ public class SearchActor extends AbstractActorWithTimers {
 								results.sentiment
 							);
 
+							System.out.println("Line5. Finally, send to user actors");
 							// 5. Finally, send to user actors
 							userActorList.forEach(userActor -> {
 								userActor.tell(
@@ -504,6 +358,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		//		return cache.getOrElseUpdate(
 		//				video_id,
 		//				() -> {
+
+		System.out.println("Requesting");
 		return ws
 			.url(YOUTUBE_URL + "/videos")
 			.addQueryParameter("part", "snippet")
