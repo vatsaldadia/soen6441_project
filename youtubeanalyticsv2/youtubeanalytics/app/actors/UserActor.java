@@ -36,12 +36,12 @@ public class UserActor extends AbstractActor {
         this.searchHistory = new ArrayList<>();
 	}
 
-	public static class ServerReasponse {
-		public JsonNode data;
-		public ServerReasponse(JsonNode data) {
-			this.data = data;
-		}
-	}
+	// public static class ServerReasponse {
+	// 	public JsonNode data;
+	// 	public ServerReasponse(JsonNode data) {
+	// 		this.data = data;
+	// 	}
+	// }
 
 	@Override
 	public Receive createReceive() {
@@ -59,12 +59,10 @@ public class UserActor extends AbstractActor {
 	private void handleWebSocketMessage(JsonNode json) {
 		if (json.get("action").asText().equals("search")) {
 			String query = json.get("query").asText();
+			if (searchHistory.contains(query)) {
+				searchHistory.remove(query);
+			}
 			searchHistory.add(0, query);
-//			searchActor.tell(new Messages.SearchRequest(query), self());
-//			SearchActor searchActor = SearchActor.getInstance(query);
-//			if (searchActor == null){}
-//			helperActor.tell(new HelperActor.createActor(query), self());
-//			System.out.println("he\ndsd\n");
 			ActorRef searchActor = youtubeController.getSearchActor(query);
 			searchActor.tell(new SearchActor.RegisterMsg(query), getSelf());
 		}
