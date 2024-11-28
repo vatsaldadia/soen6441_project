@@ -15,5 +15,6 @@ libraryDependencies ++= Seq(
   "org.mockito" % "mockito-junit-jupiter" % "3.12.4" % Test,
   "org.junit.jupiter" % "junit-jupiter-api" % "5.8.1" % Test,
   "org.junit.jupiter" % "junit-jupiter-engine" % "5.8.1" % Test,
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.0" % Test
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.0" % Test,
+  "com.typesafe.akka" %% "akka-testkit" % "2.6.21" % Test
 )

@@ -48,6 +48,8 @@ public class HelperActor extends AbstractActor {
                         queries.add(object.getQuery());
                     }
                     sender().tell(new SearchActor.RegisterMsg(object.getQuery()), getSender());
+                    System.out.println(sender());
+                    System.out.println("Message Sent");
                 })
                 .build();
     }
