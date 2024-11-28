@@ -38,6 +38,9 @@ public class HelperActor extends AbstractActor {
         }
     }
 
+    public static class TerminateActor {
+    }
+    
     @Override
     public Receive createReceive() {
         return receiveBuilder()
@@ -50,6 +53,10 @@ public class HelperActor extends AbstractActor {
                     sender().tell(new SearchActor.RegisterMsg(object.getQuery()), getSender());
                     System.out.println(sender());
                     System.out.println("Message Sent");
+                })
+                .match(TerminateActor.class, message -> {
+                    System.out.println("Terminating HelperActor");
+                    getContext().stop(getSelf());
                 })
                 .build();
     }

@@ -3,6 +3,7 @@ package controllers;
 import actors.HelperActor;
 import actors.SearchActor;
 import actors.SentimentAnalysisActor;
+import actors.SupervisorActor;
 import actors.UserActor;
 import akka.actor.Actor;
 import akka.actor.ActorRef;
@@ -30,6 +31,8 @@ public class YoutubeController extends Controller {
 	private AsyncCacheApi cache;
 	private final ActorRef readabilityCalculatorActor;
 	private final ActorRef sentimentAnalysisActor;
+	private final ActorRef supervisorActor;
+	
 	//	private final ActorRef helperActor;
 
 	private Map<String, ActorRef> searchActors;
@@ -52,6 +55,10 @@ public class YoutubeController extends Controller {
 		this.sentimentAnalysisActor = system.actorOf(
 			SentimentAnalysisActor.props()
 		);
+		this.supervisorActor = system.actorOf(
+            SupervisorActor.props(this.actorSystem, ws),
+            "supervisorActor"
+        );
 		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
 		//		system.actorOf(Props.create(TestActor.class));
 	}

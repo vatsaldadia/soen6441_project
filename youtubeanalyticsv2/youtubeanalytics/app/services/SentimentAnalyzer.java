@@ -91,8 +91,8 @@ public class SentimentAnalyzer {
 
 		sadAverage = Math.abs(sadAverage);
 
-		System.out.println(happyAverage);
-		System.out.println(sadAverage);
+		// System.out.println(happyAverage);
+		// System.out.println(sadAverage);
 
 		if (happyAverage > sadAverage && happyAverage > 70) {
 			return ":-)";

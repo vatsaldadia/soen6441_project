@@ -42,4 +42,8 @@ public class Messages {
 			return result;
 		}
 	}
+
+	public static class TerminateActor {
+    }
+    
 }

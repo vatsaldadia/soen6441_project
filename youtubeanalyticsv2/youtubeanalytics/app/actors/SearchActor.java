@@ -5,6 +5,8 @@ import akka.actor.AbstractActorWithTimers;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.pattern.Patterns;
+import messages.Messages.TerminateActor;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -14,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -128,6 +129,10 @@ public class SearchActor extends AbstractActorWithTimers {
 					this.searchSentiment = message.sentiment;
 				}
 			)
+			 .match(TerminateActor.class, message -> {
+                    System.out.println("Terminating SearchActor");
+                    getContext().stop(getSelf());
+                })
 			.build();
 	}
 
@@ -207,14 +212,13 @@ public class SearchActor extends AbstractActorWithTimers {
 						CompletionStage<ObjectNode> future = getVideo(
 							videoId
 						).thenCompose(response -> {
-							
 							String description = response
-								.asJson()
-								.get("items")
-								.get(0)
-								.get("snippet")
-								.get("description")
-								.asText();
+							.asJson()
+							.get("items")
+							.get(0)
+							.get("snippet")
+							.get("description")
+							.asText();
 							// 2. For each video, ask readability actor
 							return Patterns.ask(
 								readabilityCalculatorActor,

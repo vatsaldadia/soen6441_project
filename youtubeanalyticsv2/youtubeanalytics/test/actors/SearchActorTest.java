@@ -99,6 +99,8 @@ public class SearchActorTest {
             when(mockWSRequest.get()).thenReturn(CompletableFuture.completedFuture(mockWSResponse));
             when(mockWSResponse.asJson()).thenReturn(videoResponseNode);
 
+            System.out.println(videoResponseNode);
+
             // Prepare Props with test probe actors
             Props props = SearchActor.props(
                 mockWsClient, 
@@ -116,29 +118,30 @@ public class SearchActorTest {
             // Register the probe as a user actor
             searchActor.tell(new RegisterMsg("test query"), probe.getRef());
 
-            // // Simulate readability calculation response
-            // readabilityProbe.expectMsgClass(
-            //     Duration.create(20, TimeUnit.SECONDS), 
-            //     ReadabilityCalculator.initReadabilityCalculatorService.class
-            // );
-            // readabilityProbe.reply(
-            //     new ReadabilityCalculator.ReadabilityResults("test-video-id", 8.5, 60.0)
-            // );
 
-            // // Simulate sentiment analysis response
-            // sentimentProbe.expectMsgClass(
-            //     Duration.create(20, TimeUnit.SECONDS), 
-            //     SentimentAnalysisActor.initSentimentAnalyzerService.class
-            // );
-            // sentimentProbe.reply(
-            //     new SentimentAnalysisActor.SentimentAnalysisResults("positive")
-            // );
+            // Simulate readability calculation response
+            readabilityProbe.expectMsgClass(
+                Duration.create(20, TimeUnit.SECONDS), 
+                ReadabilityCalculator.initReadabilityCalculatorService.class
+            );
+            readabilityProbe.reply(
+                new ReadabilityCalculator.ReadabilityResults("test-video-id", 8.5, 60.0)
+            );
 
-            // // Expect a SearchResponse
-            // SearchResponse response = probe.expectMsgClass(
-            //     Duration.create(10, TimeUnit.SECONDS), 
-            //     SearchResponse.class
-            // );
+            // Simulate sentiment analysis response
+            sentimentProbe.expectMsgClass(
+                Duration.create(20, TimeUnit.SECONDS), 
+                SentimentAnalysisActor.initSentimentAnalyzerService.class
+            );
+            sentimentProbe.reply(
+                new SentimentAnalysisActor.SentimentAnalysisResults("positive")
+            );
+
+            // Expect a SearchResponse
+            SearchResponse response = probe.expectMsgClass(
+                Duration.create(10, TimeUnit.SECONDS), 
+                SearchResponse.class
+            );
 
             // Additional assertions can be added here to verify the response
         }};
