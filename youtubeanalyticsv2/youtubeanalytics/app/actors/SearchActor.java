@@ -371,20 +371,20 @@ public class SearchActor extends AbstractActorWithTimers {
 		//		);
 	}
 
-	private JsonNode processSearchResults(JsonNode rawData) {
-		ArrayNode items = (ArrayNode) rawData.get("items");
-		ArrayNode processedItems = Json.newArray();
+	// private JsonNode processSearchResults(JsonNode rawData) {
+	// 	ArrayNode items = (ArrayNode) rawData.get("items");
+	// 	ArrayNode processedItems = Json.newArray();
 
-		for (int i = 0; i < items.size(); i++) {
-			JsonNode item = items.get(i);
-			ObjectNode processedItem = (ObjectNode) item.deepCopy();
-			// Add index to each item
-			processedItem.put("index", i + 1);
-			processedItems.add(processedItem);
-		}
+	// 	for (int i = 0; i < items.size(); i++) {
+	// 		JsonNode item = items.get(i);
+	// 		ObjectNode processedItem = (ObjectNode) item.deepCopy();
+	// 		// Add index to each item
+	// 		processedItem.put("index", i + 1);
+	// 		processedItems.add(processedItem);
+	// 	}
 
-		ObjectNode result = Json.newObject();
-		result.set("items", processedItems);
-		return result;
-	}
+	// 	ObjectNode result = Json.newObject();
+	// 	result.set("items", processedItems);
+	// 	return result;
+	// }
 }

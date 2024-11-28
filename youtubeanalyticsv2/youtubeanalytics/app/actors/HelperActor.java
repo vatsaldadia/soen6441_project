@@ -4,7 +4,7 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import play.libs.ws.WSClient;
-
+import messages.Messages.TerminateActor;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,8 +38,7 @@ public class HelperActor extends AbstractActor {
         }
     }
 
-    public static class TerminateActor {
-    }
+    
     
     @Override
     public Receive createReceive() {

@@ -36,12 +36,12 @@ public class UserActor extends AbstractActor {
         this.searchHistory = new ArrayList<>();
 	}
 
-	public static class ServerReasponse {
-		public JsonNode data;
-		public ServerReasponse(JsonNode data) {
-			this.data = data;
-		}
-	}
+	// public static class ServerReasponse {
+	// 	public JsonNode data;
+	// 	public ServerReasponse(JsonNode data) {
+	// 		this.data = data;
+	// 	}
+	// }
 
 	@Override
 	public Receive createReceive() {
