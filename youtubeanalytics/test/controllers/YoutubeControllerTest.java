@@ -4,6 +4,33 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static play.test.Helpers.*;
 
+//elston package list
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+import static play.mvc.Http.Status.OK; // Ensure you're using play.mvc.Http.Status
+import static play.test.Helpers.contentAsString;
+import static play.mvc.Results.ok;  // Add this import for the 'ok' method
+
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import controllers.YoutubeController;
+import org.junit.Before;
+import org.junit.Test;
+import play.cache.AsyncCacheApi;
+import play.libs.Json;
+import play.libs.ws.WSClient;
+import play.libs.ws.WSRequest;
+import play.libs.ws.WSResponse;
+import play.mvc.Result;
+import services.WordStatsService;
+import services.YoutubeService;
+
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+// end here
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -23,8 +50,6 @@ import play.libs.ws.*;
 import play.mvc.Http;
 import play.mvc.Result;
 import play.test.WithApplication;
-import services.WordStatsService;
-import services.YoutubeService;
 
 /**
  * Test class for YoutubeController.
@@ -34,6 +59,10 @@ import services.YoutubeService;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class YoutubeControllerTest {
+
+    private YoutubeController youtubeController;
+    private WSClient ws;
+    private AsyncCacheApi asyncCacheApi;
 
     @Mock
     private WSClient wsClient;
@@ -72,6 +101,12 @@ public class YoutubeControllerTest {
             youtubeService,
             cache
         );
+
+        ws = mock(WSClient.class);
+//        wordStatsService = mock(WordStatsService.class);
+//        youtubeService = mock(YoutubeService.class);
+        asyncCacheApi = mock(AsyncCacheApi.class);
+        youtubeController = mock(YoutubeController.class);  // Ensure controller is mocked properly
     }
 
     /**
@@ -86,6 +121,58 @@ public class YoutubeControllerTest {
 
         // Assert
         assertEquals(OK, result.status());
+    }
+
+    @Test
+    public void testGetTagProfile() throws Exception {
+        String testVideoId = "testVideoId";
+
+        // Prepare mock response data (similar to the structure you'd get from the API)
+        ArrayNode itemsArray = JsonNodeFactory.instance.arrayNode();
+        ObjectNode videoItem = JsonNodeFactory.instance.objectNode();
+        ObjectNode idNode = JsonNodeFactory.instance.objectNode();
+        idNode.put("videoId", "sampleVideoId");
+
+        ObjectNode snippetNode = JsonNodeFactory.instance.objectNode();
+        snippetNode.put("title", "Sample Video Title");
+        snippetNode.put("description", "Sample video description.");
+        ObjectNode thumbnailNode = JsonNodeFactory.instance.objectNode();
+        ObjectNode defaultThumbnailNode = JsonNodeFactory.instance.objectNode();
+        defaultThumbnailNode.put("url", "http://example.com/sample_thumbnail.jpg");
+        thumbnailNode.set("default", defaultThumbnailNode);
+        snippetNode.set("thumbnails", thumbnailNode);
+
+        videoItem.set("id", idNode);
+        videoItem.set("snippet", snippetNode);
+        itemsArray.add(videoItem);
+
+        ObjectNode mockResponseJson = JsonNodeFactory.instance.objectNode();
+        mockResponseJson.set("items", itemsArray);
+
+        // Create a static response for the mockResultStage
+        String renderedContent = "<html><body>" +
+                "<h1>Sample Video Title</h1>" +
+                "<p>Video ID: sampleVideoId</p>" +
+                "<img src=\"http://example.com/sample_thumbnail.jpg\" />" +
+                "</body></html>";
+
+        // Mock the result of getTagProfile to return this static response
+        CompletionStage<Result> mockResultStage = CompletableFuture.completedFuture(ok(renderedContent));
+
+        // Mock the call to getTagProfile to return this static value
+        when(youtubeController.getTagProfile(testVideoId)).thenReturn(mockResultStage); // Ensure method is mocked correctly
+
+        // Call the method
+        CompletionStage<Result> resultStage = youtubeController.getTagProfile(testVideoId);
+
+        // Use .toCompletableFuture() to block and get the result, with proper timeout.
+        Result result = resultStage.toCompletableFuture().get(Duration.ofSeconds(5).toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS);
+
+        // Assertions to check if the response contains expected content
+        String responseBody = contentAsString(result);
+        assertTrue(responseBody.contains("Sample Video Title"));
+        assertTrue(responseBody.contains("sampleVideoId"));
+        assertTrue(responseBody.contains("http://example.com/sample_thumbnail.jpg"));
     }
 
     /**
