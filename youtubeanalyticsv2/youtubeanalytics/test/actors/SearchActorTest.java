@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -18,12 +19,12 @@ import play.libs.ws.WSRequest;
 import play.libs.ws.WSResponse;
 import scala.concurrent.duration.Duration;
 import static org.mockito.ArgumentMatchers.*;
+import services.ReadabilityCalculator;
 
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -43,20 +44,16 @@ public class SearchActorTest {
     @Mock
     private AsyncCacheApi mockCache;
 
-    @BeforeClass
-    public static void setup() {
+    @Before
+    public void setup() {
         system = ActorSystem.create();
+        MockitoAnnotations.initMocks(this);
     }
 
-    @AfterClass
-    public static void teardown() {
+    @After
+    public void teardown() {
         TestKit.shutdownActorSystem(system);
         system = null;
-    }
-
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
     }
 
     @Test
@@ -87,36 +84,38 @@ public class SearchActorTest {
 
                         
                     
-            // Mock WSClient behavior for "/search"
-            when(mockWsClient.url(contains("/search"))).thenReturn(mockWSRequest);
-            when(mockWSRequest.addQueryParameter(anyString(), anyString())).thenReturn(mockWSRequest);
-            when(mockWSRequest.get()).thenReturn(CompletableFuture.completedFuture(mockWSResponse));
-            when(mockWSResponse.asJson()).thenReturn(searchResponseNode);
+            // // Mock WSClient behavior for "/search"
+            // when(mockWsClient.url(contains("/search"))).thenReturn(mockWSRequest);
+            // when(mockWSRequest.addQueryParameter(anyString(), anyString())).thenReturn(mockWSRequest);
+            // when(mockWSRequest.get()).thenReturn(CompletableFuture.completedFuture(mockWSResponse));
+            // when(mockWSResponse.asJson()).thenReturn(searchResponseNode);
 
             // Mock WSClient behavior for "/videos"
-            when(mockWsClient.url(contains("/videos"))).thenReturn(mockWSRequest);
+            when(mockWsClient.url(anyString())).thenReturn(mockWSRequest);
             when(mockWSRequest.addQueryParameter(anyString(), anyString())).thenReturn(mockWSRequest);
             when(mockWSRequest.get()).thenReturn(CompletableFuture.completedFuture(mockWSResponse));
-            when(mockWSResponse.asJson()).thenReturn(videoResponseNode);
+            when(mockWSResponse.asJson()).thenReturn(searchResponseNode).thenReturn(videoResponseNode);
+
+            System.out.println(searchResponseNode);
 
             System.out.println(videoResponseNode);
 
             // Prepare Props with test probe actors
-            Props props = SearchActor.props(
+            
+            ActorRef searchActor = system.actorOf(SearchActor.props(
                 mockWsClient, 
                 "test query", 
                 mockCache, 
                 readabilityProbe.getRef(), 
                 sentimentProbe.getRef()
-            );
-            ActorRef searchActor = system.actorOf(props);
+            ), "searchActor");
+
+            System.out.println(searchActor);
 
             // Create a test probe to receive messages
             TestKit probe = new TestKit(system);
-
-          
             // Register the probe as a user actor
-            searchActor.tell(new RegisterMsg("test query"), probe.getRef());
+            searchActor.tell(new SearchActor.RegisterMsg("test query"), probe.getRef());
 
 
             // Simulate readability calculation response
@@ -130,17 +129,15 @@ public class SearchActorTest {
 
             // Simulate sentiment analysis response
             sentimentProbe.expectMsgClass(
-                Duration.create(20, TimeUnit.SECONDS), 
                 SentimentAnalysisActor.initSentimentAnalyzerService.class
             );
             sentimentProbe.reply(
-                new SentimentAnalysisActor.SentimentAnalysisResults("positive")
+                new SentimentAnalysisActor.SentimentAnalysisResults("test query",":-||")
             );
 
             // Expect a SearchResponse
-            SearchResponse response = probe.expectMsgClass(
-                Duration.create(10, TimeUnit.SECONDS), 
-                SearchResponse.class
+            probe.expectMsgClass(
+                SearchActor.SearchResponse.class
             );
 
             // Additional assertions can be added here to verify the response
@@ -148,96 +145,71 @@ public class SearchActorTest {
     }
 
 
-    // Helper method to prepare mock search response
-    private ObjectNode prepareMockSearchResponse() {
-        ObjectNode searchResponseNode = Json.newObject();
-        ObjectNode itemId = Json.newObject();
-        itemId.put("videoId", "test-video-id");
-        
-        ObjectNode searchItem = Json.newObject();
-        searchItem.set("id", itemId);
-        
-        searchResponseNode.putArray("items").add(searchItem);
-        return searchResponseNode;
-    }
+	// public static final class RegisterMsg {
 
-    // Helper method to prepare mock video response
-    private ObjectNode prepareMockVideoResponse() {
-        ObjectNode videoResponseNode = Json.newObject();
-        ObjectNode videoSnippet = Json.newObject();
-        videoSnippet.put("description", "Test video description");
-        
-        ObjectNode videoItem = Json.newObject();
-        videoItem.set("snippet", videoSnippet);
-        videoResponseNode.putArray("items").add(videoItem);
-        return videoResponseNode;
-    }
+	// 	private final String query;
 
-    // Inner classes to match the original actor's message types
-    public static class RegisterMsg {
-        private final String query;
+	// 	public RegisterMsg(String query) {
+	// 		this.query = query;
+	// 	}
 
-        public RegisterMsg(String query) {
-            this.query = query;
-        }
+	// 	public String getQuery() {
+	// 		return query;
+	// 	}
+	// }
 
-        public String getQuery() {
-            return query;
-        }
-    }
+    // public static class SearchResponse {
+    //     final String query;
+    //     final ObjectNode response;
 
-    public static class SearchResponse {
-        final String query;
-        final ObjectNode response;
+    //     public SearchResponse(String query, ObjectNode response) {
+    //         this.query = query;
+    //         this.response = response;
+    //     }
+    // }
 
-        public SearchResponse(String query, ObjectNode response) {
-            this.query = query;
-            this.response = response;
-        }
-    }
+    // // Simulate message classes from other actors
+    // public static class ReadabilityCalculator {
+    //     public static class initReadabilityCalculatorService {
+    //         public final String videoId;
+    //         public final String description;
 
-    // Simulate message classes from other actors
-    public static class ReadabilityCalculator {
-        public static class initReadabilityCalculatorService {
-            public final String videoId;
-            public final String description;
+    //         public initReadabilityCalculatorService(String videoId, String description) {
+    //             this.videoId = videoId;
+    //             this.description = description;
+    //         }
+    //     }
 
-            public initReadabilityCalculatorService(String videoId, String description) {
-                this.videoId = videoId;
-                this.description = description;
-            }
-        }
+    //     public static class ReadabilityResults {
+    //         public final String videoId;
+    //         public final double gradeLevel;
+    //         public final double readingScore;
 
-        public static class ReadabilityResults {
-            public final String videoId;
-            public final double gradeLevel;
-            public final double readingScore;
+    //         public ReadabilityResults(String videoId, double gradeLevel, double readingScore) {
+    //             this.videoId = videoId;
+    //             this.gradeLevel = gradeLevel;
+    //             this.readingScore = readingScore;
+    //         }
+    //     }
+    // }
 
-            public ReadabilityResults(String videoId, double gradeLevel, double readingScore) {
-                this.videoId = videoId;
-                this.gradeLevel = gradeLevel;
-                this.readingScore = readingScore;
-            }
-        }
-    }
+    // public static class SentimentAnalysisActor {
+    //     public static class initSentimentAnalyzerService {
+    //         public final String query;
+    //         public final java.util.List<String> descriptions;
 
-    public static class SentimentAnalysisActor {
-        public static class initSentimentAnalyzerService {
-            public final String query;
-            public final java.util.List<String> descriptions;
+    //         public initSentimentAnalyzerService(String query, java.util.List<String> descriptions) {
+    //             this.query = query;
+    //             this.descriptions = descriptions;
+    //         }
+    //     }
 
-            public initSentimentAnalyzerService(String query, java.util.List<String> descriptions) {
-                this.query = query;
-                this.descriptions = descriptions;
-            }
-        }
+    //     public static class SentimentAnalysisResults {
+    //         public final String sentiment;
 
-        public static class SentimentAnalysisResults {
-            public final String sentiment;
-
-            public SentimentAnalysisResults(String sentiment) {
-                this.sentiment = sentiment;
-            }
-        }
-    }
+    //         public SentimentAnalysisResults(String sentiment) {
+    //             this.sentiment = sentiment;
+    //         }
+    //     }
+    // }
 }

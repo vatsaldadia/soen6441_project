@@ -102,6 +102,7 @@ public class SearchActor extends AbstractActorWithTimers {
 				}
 			})
 			.match(RegisterMsg.class, message -> {
+				
 				if (message.getQuery().equals(this.query)) {
 					userActorList.add(getSender());
 					handleSearch();
@@ -200,6 +201,7 @@ public class SearchActor extends AbstractActorWithTimers {
 						new ArrayList<>();
 
 					System.out.println("Line1. Get all videos and their descriptions");
+					System.out.println(items);
 					// 1. Get all videos and their descriptions
 					for (JsonNode item : items) {
 						ObjectNode videoNode = (ObjectNode) item;

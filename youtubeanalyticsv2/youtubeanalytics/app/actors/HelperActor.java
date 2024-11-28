@@ -45,14 +45,14 @@ public class HelperActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(createActor.class, object -> {
-                    System.out.println("Received message of type: " + object.getClass());
+                    // System.out.println("Received message of type: " + object.getClass());
                     if (!queries.contains(object.getQuery())) {
 //                        system.actorOf(SearchActor.props(ws, object.getQuery(), cache));
                         queries.add(object.getQuery());
                     }
                     sender().tell(new SearchActor.RegisterMsg(object.getQuery()), getSender());
-                    System.out.println(sender());
-                    System.out.println("Message Sent");
+                    // System.out.println(sender());
+                    // System.out.println("Message Sent");
                 })
                 .match(TerminateActor.class, message -> {
                     System.out.println("Terminating HelperActor");

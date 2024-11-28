@@ -66,7 +66,7 @@ public class SupervisorActor extends AbstractActor {
     public SupervisorStrategy supervisorStrategy() {
         return new OneForOneStrategy(
                 10,
-                Duration.create(1, TimeUnit.MINUTES),
+                Duration.create(2, TimeUnit.SECONDS),
                 DeciderBuilder
                         .match(Exception.class, e -> SupervisorStrategy.restart())
                         .build()
