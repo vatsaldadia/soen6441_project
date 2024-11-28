@@ -149,7 +149,7 @@ function displayResults(data) {
 	// Add search header and stats
 	$("#results").append(`
         <h2>Search term: ${data.query}</h2>
-        <b>Word Stats:</b><a id="moreStats" href="/wordstats/${encodeURIComponent($("#searchQuery").val())}">More Stats</a><br>
+        <b>Word Stats:</b><a id="moreStats" href="/wordstats/${data.query}" target="_blank">More Stats</a><br>
         <body>
             <b>Sentiment:</b> ${data.sentiment || "N/A"}<br>
             <b>Flesh-Kincaid Grade Level Avg:</b> ${data.fleschKincaidGradeLevelAvg || "N/A"}<br>

@@ -1,7 +1,9 @@
 package actors;
 
 import actors.SentimentAnalysisActor;
+import actors.WordStatsActor;
 import akka.actor.AbstractActorWithTimers;
+import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.pattern.Patterns;
@@ -26,6 +28,8 @@ import play.libs.ws.WSResponse;
 import scala.concurrent.duration.Duration;
 import services.ReadabilityCalculator;
 
+import static actors.WordStatsActor.wordStatsMap;
+
 public class SearchActor extends AbstractActorWithTimers {
 
 	private final List<ActorRef> userActorList;
@@ -36,8 +40,9 @@ public class SearchActor extends AbstractActorWithTimers {
 	//	private AsyncCacheApi cache;
 	private ActorRef readabilityCalculatorActor;
 	private ActorRef sentimentAnalysisActor;
+	private ActorRef wordStatsActor;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyBnujY6PQi1cXVkf02_epIdIVKT-ywT2vc";
+		"AIzaSyBayKpnm9_09dL7QQ6LY84XWPOjBDp_mWs";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
@@ -46,7 +51,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		String query,
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
-		ActorRef sentimentAnalysisActor
+		ActorRef sentimentAnalysisActor,
+		ActorRef wordStatsActor
 	) {
 		this.ws = ws;
 		this.query = query;
@@ -55,6 +61,7 @@ public class SearchActor extends AbstractActorWithTimers {
 		this.videoNodes = new HashMap<>();
 		this.readabilityCalculatorActor = readabilityCalculatorActor;
 		this.sentimentAnalysisActor = sentimentAnalysisActor;
+		this.wordStatsActor = wordStatsActor;
 		this.searchSentiment = ":-|||||";
 	}
 
@@ -63,7 +70,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		String query,
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
-		ActorRef sentimentAnalysisActor
+		ActorRef sentimentAnalysisActor,
+		ActorRef wordStatsActor
 	) {
 		return Props.create(
 			SearchActor.class,
@@ -71,7 +79,8 @@ public class SearchActor extends AbstractActorWithTimers {
 			query,
 			cache,
 			readabilityCalculatorActor,
-			sentimentAnalysisActor
+			sentimentAnalysisActor,
+			wordStatsActor
 		);
 	}
 
@@ -128,6 +137,10 @@ public class SearchActor extends AbstractActorWithTimers {
 					this.searchSentiment = message.sentiment;
 				}
 			)
+				.match(WordStatsActor.WordStatsResults.class, message -> {
+					JsonNode wordStats = message.wordStats;
+					wordStatsMap.put(message.videoId, wordStats);
+				})
 			.build();
 	}
 
@@ -240,23 +253,23 @@ public class SearchActor extends AbstractActorWithTimers {
 
 	// 				System.out.println("Line4");
 
-	// 				CompletableFuture.allOf(
-	// 					futures.toArray(new CompletableFuture[0])
-	// 				).thenApply(v -> {
-	// 					List<Double> grades = new ArrayList<>();
-	// 					List<Double> scores = new ArrayList<>();
-	// 					List<String> descriptions = new ArrayList<>();
-	// 					// CompletableFuture<Void> delay =
-	// 					// 	CompletableFuture.runAsync(() -> {
-	// 					// 		try {
-	// 					// 			Thread.sleep(4000);
-	// 					// 		} catch (InterruptedException e) {
-	// 					// 			e.printStackTrace();
-	// 					// 		}
-	// 					// 	});
-
-	// 					// // This will block until the delay is complete
-	// 					// delay.join();
+//	 				CompletableFuture.allOf(
+//	 					futures.toArray(new CompletableFuture[0])
+//	 				).thenApply(v -> {
+//	 					List<Double> grades = new ArrayList<>();
+//	 					List<Double> scores = new ArrayList<>();
+//	 					List<String> descriptions = new ArrayList<>();
+//	 					 CompletableFuture<Void> delay =
+//	 					 	CompletableFuture.runAsync(() -> {
+//	 					 		try {
+//	 					 			Thread.sleep(4000);
+//	 					 		} catch (InterruptedException e) {
+//	 					 			e.printStackTrace();
+//	 					 		}
+//	 					 	});
+//
+//	 					 // This will block until the delay is complete
+//	 					 delay.join();
 	// 					System.out.println("Line5.1");
 	// 					futures
 	// 						.stream()
@@ -346,6 +359,7 @@ public class SearchActor extends AbstractActorWithTimers {
 					JsonNode rawData = youtubeResponse.asJson();
 					System.out.println("Line0: API Response");
 					JsonNode items = rawData.get("items");
+					List<String> allDescriptions = new ArrayList<>();
 					ObjectNode modifiedResponse = rawData.deepCopy();
 					ArrayNode modifiedItems =
 						JsonNodeFactory.instance.arrayNode();
@@ -371,6 +385,7 @@ public class SearchActor extends AbstractActorWithTimers {
 								.get("snippet")
 								.get("description")
 								.asText();
+							allDescriptions.add(description);
 
 							// 2. For each video, ask readability actor
 							return Patterns.ask(
@@ -449,6 +464,9 @@ public class SearchActor extends AbstractActorWithTimers {
 						);
 						modifiedResponse.set("items", modifiedItems);
 						modifiedResponse.put("query", query);
+
+						// Send the descriptions to the WordStatsService
+						wordStatsActor.tell(new WordStatsActor.InitWordStatsService(query, allDescriptions), getSelf());
 
 						// 4. Ask sentiment analysis actor
 						return Patterns.ask(
