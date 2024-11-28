@@ -1,0 +1,33 @@
+@import com.fasterxml.jackson.databind.JsonNode
+@import scala.jdk.CollectionConverters._
+
+@(wordStats: JsonNode, searchTerm: String)
+
+@main("Word Stats for " + searchTerm) {
+    <h1>Word Statistics for Search Term: "@searchTerm"</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Word</th>
+                <th>Frequency</th>
+            </tr>
+        </thead>
+        <tbody>
+@*            @for(entry <- wordStats.fields().asScala) {*@
+@*                <tr>*@
+@*                    <td>@entry.getKey</td>*@
+@*                    <td>@entry.getValue.asInt()</td>*@
+@*                </tr>*@
+@*            }*@
+            @for(entry <- wordStats.fields().asScala) {
+                <tr>
+                    <td>@entry.getKey</td>
+                    <td>@entry.getValue.asInt()</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <p><a href="/">Back to Search</a></p>
+}
