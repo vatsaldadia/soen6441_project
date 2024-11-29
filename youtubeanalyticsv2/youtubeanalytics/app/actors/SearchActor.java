@@ -154,7 +154,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	//
 	//	}
 
-	public final class Tick {
+	public static final class Tick {
 
 		private final String query;
 

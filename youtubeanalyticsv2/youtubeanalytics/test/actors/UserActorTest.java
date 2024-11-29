@@ -110,7 +110,7 @@ public class UserActorTest {
 				);
 
 				// Send multiple searches
-				String[] queries = { "query1", "query2", "query3" };
+				String[] queries = { "query1", "query2", "query3", "query1" };
 				for (String query : queries) {
 					ObjectNode searchMessage = Json.newObject();
 					searchMessage.put("action", "search");
