@@ -62,21 +62,6 @@ public class ReadabilityCalculator extends AbstractActor{
 //                .orElse(0.0);
 //    }
 
-//    /**
-//     * Calculates the average reading score from a list of scores.
-//     *
-//     * @param scores List of reading scores.
-//     * @return The average reading score.
-//     * @author Vatsal Dadia
-//     */
-//    public static double calculateScoreAvg(List<Double> scores) {
-//        return scores
-//                .stream()
-//                .mapToDouble(Double::doubleValue)
-//                .average()
-//                .orElse(0.0);
-//    }
-
     /**
      * Calculates the Flesch-Kincaid grade level for a given description.
      *
@@ -85,6 +70,9 @@ public class ReadabilityCalculator extends AbstractActor{
      * @author Vatsal Dadia
      */
     public static double calculateFleschKincaidGradeLevel(String description) {
+        if (description == null || description.isEmpty()) {
+            return 0.0;
+        }
         int totalWords = countWords(description);
         int totalSentences = countSentences(description);
         int totalSyllables = countSyllables(description);
@@ -105,6 +93,9 @@ public class ReadabilityCalculator extends AbstractActor{
      * @author Vatsal Dadia
      */
     public static double calculateFleschReadingScore(String description) {
+        if (description == null || description.isEmpty()) {
+            return 0.0;
+        }
         int totalWords = countWords(description);
         int totalSentences = countSentences(description);
         int totalSyllables = countSyllables(description);
@@ -125,7 +116,7 @@ public class ReadabilityCalculator extends AbstractActor{
      */
     static int countWords(String description) {
         String[] words = description.split("\\s+");
-        return words.length != 0 ? words.length : 1;
+        return words.length;
     }
 
     /**
@@ -137,7 +128,7 @@ public class ReadabilityCalculator extends AbstractActor{
      */
     static int countSentences(String description) {
         String[] sentences = description.split("[.!?]");
-        return sentences.length != 0 ? sentences.length : 1;
+        return sentences.length;
     }
 
     /**
@@ -187,6 +178,5 @@ public class ReadabilityCalculator extends AbstractActor{
         }
         return count;
     }
-
 
 }
