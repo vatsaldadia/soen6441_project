@@ -31,188 +31,225 @@ import java.util.concurrent.TimeUnit;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 public class SearchActorTest {
-    private static ActorSystem system;
+        private static ActorSystem system;
 
-    @Mock
-    private WSClient mockWsClient;
+        @Mock
+        private WSClient mockWsClient;
 
-    @Mock
-    private WSRequest mockWSRequest;
+        @Mock
+        private WSRequest mockWSRequest;
 
-    @Mock
-    private WSResponse mockWSResponse;
+        @Mock
+        private WSResponse mockWSResponse;
 
-    @Mock
-    private AsyncCacheApi mockCache;
+        @Mock
+        private AsyncCacheApi mockCache;
 
-    @Before
-    public void setup() {
-        system = ActorSystem.create();
-        MockitoAnnotations.initMocks(this);
-    }
+        @Before
+        public void setup() {
+                system = ActorSystem.create();
+                MockitoAnnotations.initMocks(this);
+        }
 
-    @After
-    public void teardown() {
-        TestKit.shutdownActorSystem(system);
-        system = null;
-    }
+        @After
+        public void teardown() {
+                TestKit.shutdownActorSystem(system);
+                system = null;
+        }
 
-    
-    @Test
-    public void testSearchActorWorkflow() {
-        System.out.println("SearchActorTest.testSearchActorWorkflow");
-        new TestKit(system) {
-            {
-                // Create test probes to simulate readability and sentiment actors
-                TestKit readabilityProbe = new TestKit(system);
-                TestKit sentimentProbe = new TestKit(system);
+        @Test
+        public void testHandleSearchWithEmptyUserList() {
+                new TestKit(system) {
+                        {
+                                // Mock dependencies
+                                WSClient mockWsClient = mock(WSClient.class);
+                                AsyncCacheApi mockCache = mock(AsyncCacheApi.class);
+                                ActorRef mockReadabilityCalculatorActor = mock(ActorRef.class);
+                                ActorRef mockSentimentAnalysisActor = mock(ActorRef.class);
+                                ActorRef mockWordStatsActor = mock(ActorRef.class);
 
-                TestKit wordStatProbe = new TestKit(system);
+                                // Create the SearchActor
+                                ActorRef searchActor = system.actorOf(SearchActor.props(
+                                                mockWsClient,
+                                                "test query",
+                                                mockCache,
+                                                mockReadabilityCalculatorActor,
+                                                mockSentimentAnalysisActor,
+                                                mockWordStatsActor), "searchActor");
 
-                // Prepare mock YouTube search response
-                ObjectNode searchResponseNode = Json.newObject();
-                ObjectNode itemId = Json.newObject();
-                itemId.put("videoId", "test-video-id");
+                                // Create a test probe to receive messages
+                                TestKit probe = new TestKit(system);
 
-                ObjectNode searchItem = Json.newObject();
-                searchItem.set("id", itemId);
+                                // Send a Tick message to trigger handleSearch
+                                searchActor.tell(new SearchActor.Tick("test query"), probe.getRef());
 
-                searchResponseNode.putArray("items").add(searchItem);
+                                // Verify that no search is performed (no WSClient calls)
+                                verify(mockWsClient, never()).url(anyString());
+                        }
+                };
+        }
 
-                // Prepare mock video details response
-                ObjectNode videoResponseNode = Json.newObject();
-                ObjectNode videoSnippet = Json.newObject();
-                videoSnippet.put("description", "Test video description");
+        @Test
+        public void testSearchActorWorkflow() {
+                System.out.println("SearchActorTest.testSearchActorWorkflow");
+                new TestKit(system) {
+                        {
+                                // Create test probes to simulate readability and sentiment actors
+                                TestKit readabilityProbe = new TestKit(system);
+                                TestKit sentimentProbe = new TestKit(system);
 
-                ObjectNode videoItem = Json.newObject();
-                videoItem.set("snippet", videoSnippet);
-                videoResponseNode.putArray("items").add(videoItem);
+                                TestKit wordStatProbe = new TestKit(system);
 
-                // Mock WSClient behavior for "/videos"
-                when(mockWsClient.url(anyString())).thenReturn(mockWSRequest);
-                when(mockWSRequest.addQueryParameter(anyString(), anyString())).thenReturn(mockWSRequest);
-                when(mockWSRequest.get()).thenReturn(CompletableFuture.completedFuture(mockWSResponse));
-                when(mockWSResponse.asJson()).thenReturn(searchResponseNode).thenReturn(videoResponseNode);
+                                // Prepare mock YouTube search response
+                                ObjectNode searchResponseNode = Json.newObject();
+                                ObjectNode itemId = Json.newObject();
+                                itemId.put("videoId", "test-video-id");
 
-                System.out.println(searchResponseNode);
+                                ObjectNode searchItem = Json.newObject();
+                                searchItem.set("id", itemId);
 
-                System.out.println(videoResponseNode);
+                                searchResponseNode.putArray("items").add(searchItem);
 
-                // Prepare Props with test probe actors
+                                // Prepare mock video details response
+                                ObjectNode videoResponseNode = Json.newObject();
+                                ObjectNode videoSnippet = Json.newObject();
+                                videoSnippet.put("description", "Test video description");
 
-                ActorRef searchActor = system.actorOf(SearchActor.props(
-                        mockWsClient,
-                        "test query",
-                        mockCache,
-                        readabilityProbe.getRef(),
-                        sentimentProbe.getRef(),
-                        wordStatProbe.getRef()), "searchActor");
+                                ObjectNode videoItem = Json.newObject();
+                                videoItem.set("snippet", videoSnippet);
+                                videoResponseNode.putArray("items").add(videoItem);
 
-                System.out.println(searchActor);
+                                // Mock WSClient behavior for "/videos"
+                                when(mockWsClient.url(anyString())).thenReturn(mockWSRequest);
+                                when(mockWSRequest.addQueryParameter(anyString(), anyString()))
+                                                .thenReturn(mockWSRequest);
+                                when(mockWSRequest.get()).thenReturn(CompletableFuture.completedFuture(mockWSResponse));
+                                when(mockWSResponse.asJson()).thenReturn(searchResponseNode)
+                                                .thenReturn(videoResponseNode);
 
-                // Create a test probe to receive messages
-                TestKit probe = new TestKit(system);
-                // Register the probe as a user actor
-                searchActor.tell(new SearchActor.RegisterMsg("test query"), probe.getRef());
+                                System.out.println(searchResponseNode);
 
-                // Simulate readability calculation response
-                readabilityProbe.expectMsgClass(
-                        Duration.create(20, TimeUnit.SECONDS),
-                        ReadabilityCalculator.initReadabilityCalculatorService.class);
-                readabilityProbe.reply(
-                        new ReadabilityCalculator.ReadabilityResults("test-video-id", 8.5, 60.0));
+                                System.out.println(videoResponseNode);
 
-                // Simulate sentiment analysis response
-                sentimentProbe.expectMsgClass(
-                        SentimentAnalysisActor.initSentimentAnalyzerService.class);
-                sentimentProbe.reply(
-                        new SentimentAnalysisActor.SentimentAnalysisResults("test query", ":-||"));
+                                // Prepare Props with test probe actors
 
-                wordStatProbe.expectMsgClass(
-                        WordStatsActor.InitWordStatsService.class);
-                Map<String, Long> wordStats = new HashMap<>();
-                wordStats.put("test", 1L);
-                wordStatProbe.reply(
-                        new WordStatsActor.WordStatsResults("test-video-id", wordStats));
+                                ActorRef searchActor = system.actorOf(SearchActor.props(
+                                                mockWsClient,
+                                                "test query",
+                                                mockCache,
+                                                readabilityProbe.getRef(),
+                                                sentimentProbe.getRef(),
+                                                wordStatProbe.getRef()), "searchActor");
 
-                // Expect a SearchResponse
-                probe.expectMsgClass(
-                        SearchActor.SearchResponse.class);
+                                System.out.println(searchActor);
 
-                // Additional assertions can be added here to verify the response
-            }
-        };
-    }
+                                // Create a test probe to receive messages
+                                TestKit probe = new TestKit(system);
+                                // Register the probe as a user actor
+                                searchActor.tell(new SearchActor.RegisterMsg("test query"), probe.getRef());
 
-    // public static final class RegisterMsg {
+                                // Simulate readability calculation response
+                                readabilityProbe.expectMsgClass(
+                                                Duration.create(20, TimeUnit.SECONDS),
+                                                ReadabilityCalculator.initReadabilityCalculatorService.class);
+                                readabilityProbe.reply(
+                                                new ReadabilityCalculator.ReadabilityResults("test-video-id", 8.5,
+                                                                60.0));
 
-    // private final String query;
+                                // Simulate sentiment analysis response
+                                sentimentProbe.expectMsgClass(
+                                                SentimentAnalysisActor.initSentimentAnalyzerService.class);
+                                sentimentProbe.reply(
+                                                new SentimentAnalysisActor.SentimentAnalysisResults("test query",
+                                                                ":-||"));
 
-    // public RegisterMsg(String query) {
-    // this.query = query;
-    // }
+                                wordStatProbe.expectMsgClass(
+                                                WordStatsActor.InitWordStatsService.class);
+                                Map<String, Long> wordStats = new HashMap<>();
+                                wordStats.put("test", 1L);
+                                wordStatProbe.reply(
+                                                new WordStatsActor.WordStatsResults("test-video-id", wordStats));
 
-    // public String getQuery() {
-    // return query;
-    // }
-    // }
+                                // Expect a SearchResponse
+                                probe.expectMsgClass(
+                                                SearchActor.SearchResponse.class);
 
-    // public static class SearchResponse {
-    // final String query;
-    // final ObjectNode response;
+                                // Additional assertions can be added here to verify the response
+                        }
+                };
+        }
 
-    // public SearchResponse(String query, ObjectNode response) {
-    // this.query = query;
-    // this.response = response;
-    // }
-    // }
+        // public static final class RegisterMsg {
 
-    // // Simulate message classes from other actors
-    // public static class ReadabilityCalculator {
-    // public static class initReadabilityCalculatorService {
-    // public final String videoId;
-    // public final String description;
+        // private final String query;
 
-    // public initReadabilityCalculatorService(String videoId, String description) {
-    // this.videoId = videoId;
-    // this.description = description;
-    // }
-    // }
+        // public RegisterMsg(String query) {
+        // this.query = query;
+        // }
 
-    // public static class ReadabilityResults {
-    // public final String videoId;
-    // public final double gradeLevel;
-    // public final double readingScore;
+        // public String getQuery() {
+        // return query;
+        // }
+        // }
 
-    // public ReadabilityResults(String videoId, double gradeLevel, double
-    // readingScore) {
-    // this.videoId = videoId;
-    // this.gradeLevel = gradeLevel;
-    // this.readingScore = readingScore;
-    // }
-    // }
-    // }
+        // public static class SearchResponse {
+        // final String query;
+        // final ObjectNode response;
 
-    // public static class SentimentAnalysisActor {
-    // public static class initSentimentAnalyzerService {
-    // public final String query;
-    // public final java.util.List<String> descriptions;
+        // public SearchResponse(String query, ObjectNode response) {
+        // this.query = query;
+        // this.response = response;
+        // }
+        // }
 
-    // public initSentimentAnalyzerService(String query, java.util.List<String>
-    // descriptions) {
-    // this.query = query;
-    // this.descriptions = descriptions;
-    // }
-    // }
+        // // Simulate message classes from other actors
+        // public static class ReadabilityCalculator {
+        // public static class initReadabilityCalculatorService {
+        // public final String videoId;
+        // public final String description;
 
-    // public static class SentimentAnalysisResults {
-    // public final String sentiment;
+        // public initReadabilityCalculatorService(String videoId, String description) {
+        // this.videoId = videoId;
+        // this.description = description;
+        // }
+        // }
 
-    // public SentimentAnalysisResults(String sentiment) {
-    // this.sentiment = sentiment;
-    // }
-    // }
-    // }
+        // public static class ReadabilityResults {
+        // public final String videoId;
+        // public final double gradeLevel;
+        // public final double readingScore;
+
+        // public ReadabilityResults(String videoId, double gradeLevel, double
+        // readingScore) {
+        // this.videoId = videoId;
+        // this.gradeLevel = gradeLevel;
+        // this.readingScore = readingScore;
+        // }
+        // }
+        // }
+
+        // public static class SentimentAnalysisActor {
+        // public static class initSentimentAnalyzerService {
+        // public final String query;
+        // public final java.util.List<String> descriptions;
+
+        // public initSentimentAnalyzerService(String query, java.util.List<String>
+        // descriptions) {
+        // this.query = query;
+        // this.descriptions = descriptions;
+        // }
+        // }
+
+        // public static class SentimentAnalysisResults {
+        // public final String sentiment;
+
+        // public SentimentAnalysisResults(String sentiment) {
+        // this.sentiment = sentiment;
+        // }
+        // }
+        // }
 }
