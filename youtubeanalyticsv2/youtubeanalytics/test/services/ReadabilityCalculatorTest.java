@@ -27,6 +27,8 @@ public class ReadabilityCalculatorTest {
                 ReadabilityCalculator.calculateFleschKincaidGradeLevel(description) * 100.0
         ) / 100.0;
         assertEquals(expectedGradeLevel, actualGradeLevel, 0.02);
+        assertEquals(0.0, ReadabilityCalculator.calculateFleschKincaidGradeLevel(""), 0.02);
+        assertEquals(0.0, ReadabilityCalculator.calculateFleschKincaidGradeLevel(null), 0.02);
     }
 
     /**
@@ -43,6 +45,8 @@ public class ReadabilityCalculatorTest {
                 ReadabilityCalculator.calculateFleschReadingScore(description) * 100.0
         ) / 100.0;
         assertEquals(expectedReadingScore, actualReadingScore, 0.02);
+        assertEquals(0.0, ReadabilityCalculator.calculateFleschReadingScore(""), 0.02);
+        assertEquals(0.0, ReadabilityCalculator.calculateFleschReadingScore(null), 0.02);
     }
 
     /**
@@ -126,6 +130,7 @@ public class ReadabilityCalculatorTest {
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord("This"));
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord("is"));
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord("a"));
+        assertEquals(1, ReadabilityCalculator.countSyllablesInWord("aa"));
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord("simple"));
         assertEquals(2, ReadabilityCalculator.countSyllablesInWord("sentence"));
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord("It"));
@@ -136,4 +141,5 @@ public class ReadabilityCalculatorTest {
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord("ggc"));
         assertEquals(1, ReadabilityCalculator.countSyllablesInWord(""));
     }
+
 }
