@@ -22,6 +22,7 @@ public class SupervisorActor extends AbstractActor {
     private final ActorRef helperActor;
     private final ActorRef sentimentAnalysisActor;
     private final ActorRef readibilityCalculatorActor;
+    private final ActorRef wordStatsActor;
     
     public static Props props(ActorSystem system, WSClient ws) {
         return Props.create(SupervisorActor.class, system, ws);
@@ -32,11 +33,13 @@ public class SupervisorActor extends AbstractActor {
         helperActor = getContext().actorOf(HelperActor.props(system, ws), "helperActor");
         sentimentAnalysisActor = getContext().actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
         readibilityCalculatorActor = getContext().actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
+        wordStatsActor = getContext().actorOf(WordStatsActor.props(), "wordStatsActor");
 
         getContext().watch(searchActor);
         getContext().watch(helperActor);
         getContext().watch(sentimentAnalysisActor);
         getContext().watch(readibilityCalculatorActor);
+        getContext().watch(wordStatsActor);
         
     }
 
@@ -57,6 +60,10 @@ public class SupervisorActor extends AbstractActor {
                     else if (t.getActor().equals(readibilityCalculatorActor)) {
                         System.out.println("Readibility calculator actor terminated");
                         getContext().actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
+                    }
+                    else if (t.getActor().equals(wordStatsActor)) {
+                        System.out.println("Word stats actor terminated");
+                        getContext().actorOf(WordStatsActor.props(), "wordStatsActor");
                     }
                 })
                 .build();

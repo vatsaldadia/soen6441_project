@@ -54,10 +54,12 @@ public class SupervisorActorTest {
             ActorRef searchActor = system.actorOf(SearchActor.props(mockWsClient, "test query", null, null, null, null), "searchActor");
             ActorRef helperActor = system.actorOf(HelperActor.props(system, mockWsClient), "helperActor");
             ActorRef sentimentAnalysisActor = system.actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
+            ActorRef wordStatsActor = system.actorOf(WordStatsActor.props(), "wordStatsActor");
 
             supervisorActor.tell(new Terminated(searchActor, false, false), getRef());
             supervisorActor.tell(new Terminated(helperActor, false, false), getRef());
             supervisorActor.tell(new Terminated(sentimentAnalysisActor, false, false), getRef());
+            supervisorActor.tell(new Terminated(wordStatsActor, false, false), getRef());
 
             // // Expect the SupervisorActor to restart the terminated actors
             // expectTerminated(Duration.create(10, TimeUnit.SECONDS), searchActor);
@@ -68,6 +70,7 @@ public class SupervisorActorTest {
             ActorRef restartedSearchActor = system.actorSelection("/user/supervisorActor/searchActor").resolveOne(java.time.Duration.ofSeconds(3)).toCompletableFuture().join();
             ActorRef restartedHelperActor = system.actorSelection("/user/supervisorActor/helperActor").resolveOne(java.time.Duration.ofSeconds(3)).toCompletableFuture().join();
             ActorRef restartedSentimentAnalysisActor = system.actorSelection("/user/supervisorActor/sentimentAnalysisActor").resolveOne(java.time.Duration.ofSeconds(3)).toCompletableFuture().join();
+            ActorRef restartedWordStatsActor = system.actorSelection("/user/supervisorActor/wordStatsActor").resolveOne(java.time.Duration.ofSeconds(3)).toCompletableFuture().join();
 
             assert(restartedSearchActor != null);
             assert(restartedHelperActor != null);

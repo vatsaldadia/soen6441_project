@@ -50,18 +50,4 @@ public class WordStatsService {
                 ));
     }
 
-    /**
-     * Computes word statistics from a list of YoutubeVideo objects.
-     *
-     * @param descriptions is a List of String descriptions.
-     * @return Sorted map of word frequencies.
-     * @author Rolwyn Raju
-     */
-    public static Map<String, Long> computeWordStats(List<String> descriptions) {
-        // Splitting the string into words, then to lowercase, and counting word frequencies
-        Map<String, Long> sortedWordCount = calculateWordStats(descriptions);
-
-        // Passing the sorted word stats map and search query to the view
-        return sortedWordCount;
-    }
 }

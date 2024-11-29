@@ -9,6 +9,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import messages.Messages;
 import services.WordStatsService;
 
 import static services.WordStatsService.calculateWordStats;
@@ -26,6 +27,10 @@ public class WordStatsActor extends AbstractActor {
                 .match(InitWordStatsService.class, message -> {
                     Map<String, Long> wordStats = calculateWordStats(message.descriptions);
                     getSender().tell(new WordStatsResults(message.videoId, wordStats), getSelf());
+                })
+                .match(Messages.TerminateActor.class, message -> {
+                    System.out.println("Terminating WordStatsActor");
+                    getContext().stop(getSelf());
                 })
                 .build();
     }
