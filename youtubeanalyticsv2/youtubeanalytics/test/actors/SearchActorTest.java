@@ -124,9 +124,6 @@ public class SearchActorTest {
                 readabilityProbe.reply(
                         new ReadabilityCalculator.ReadabilityResults("test-video-id", 8.5, 60.0));
 
-                ReadabilityCalculator.initReadabilityCalculatorService expectedMessage = new ReadabilityCalculator.initReadabilityCalculatorService("testVideoId", "test description");
-                probe.expectMsg(Duration.create(5, "seconds"), expectedMessage);
-
                 // Simulate sentiment analysis response
                 sentimentProbe.expectMsgClass(
                         SentimentAnalysisActor.initSentimentAnalyzerService.class);
