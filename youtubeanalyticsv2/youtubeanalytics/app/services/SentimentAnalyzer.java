@@ -94,9 +94,9 @@ public class SentimentAnalyzer {
 		// System.out.println(happyAverage);
 		// System.out.println(sadAverage);
 
-		if (happyAverage > sadAverage && happyAverage > 70) {
+		if (happyAverage > 70) {
 			return ":-)";
-		} else if (sadAverage > happyAverage && sadAverage > 70) {
+		} else if (sadAverage > 70) {
 			return ":-(";
 		} else {
 			return ":-|";

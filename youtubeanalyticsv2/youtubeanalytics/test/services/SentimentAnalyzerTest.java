@@ -11,7 +11,6 @@ import org.junit.Test;
  * Test class for SentimentAnalyzer.
  * This class contains unit tests for the SentimentAnalyzer methods.
  *
- * @author Mohnish Mirchandani
  */
 public class SentimentAnalyzerTest {
 
@@ -19,7 +18,6 @@ public class SentimentAnalyzerTest {
      * Tests the SentimentAnalyzer with various descriptions.
      * Verifies that the analyzeDescription and analyzeSentiment methods return the expected results.
      *
-     * @author Mohnish Mirchandani
      */
     @Test
     public void testSentimentAnalyzer() {
@@ -73,7 +71,7 @@ public class SentimentAnalyzerTest {
         // Test 10: analyzeSentiment with mixed descriptions
         List<String> mixedDescriptions = Arrays.asList("happy wonderful video", "terrible awful content", "normal neutral stuff");
         String mixedSentiment = SentimentAnalyzer.analyzeSentiment(mixedDescriptions);
-        assertEquals(":-|", mixedSentiment);
+        assertEquals(":-)", mixedSentiment);
 
         // Test 11: Empty list
         List<String> emptyList = Collections.emptyList();
@@ -90,4 +88,6 @@ public class SentimentAnalyzerTest {
         String thresholdResult = SentimentAnalyzer.analyzeSentiment(belowThresholdDescriptions);
         assertEquals(":-|", thresholdResult);
     }
+
+    
 }

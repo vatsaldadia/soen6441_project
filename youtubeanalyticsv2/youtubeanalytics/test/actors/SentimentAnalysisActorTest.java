@@ -203,7 +203,7 @@ public class SentimentAnalysisActorTest {
 
             // Verify the response
             assertEquals(testQuery, response.searchQuery);
-            assertEquals(":-|", response.sentiment);
+            assertEquals(":-)", response.sentiment);
         }};
     }
 }
