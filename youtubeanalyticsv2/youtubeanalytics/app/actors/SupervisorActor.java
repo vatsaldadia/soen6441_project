@@ -11,7 +11,7 @@ import scala.concurrent.duration.Duration;
 import akka.actor.ActorSystem;
 import play.libs.streams.ActorFlow;
 import play.libs.ws.WSClient;
-
+import services.ChannelProfileService;
 import java.util.concurrent.TimeUnit;
 
 import services.ReadabilityCalculator;
@@ -23,24 +23,25 @@ public class SupervisorActor extends AbstractActor {
     private final ActorRef sentimentAnalysisActor;
     private final ActorRef readibilityCalculatorActor;
     private final ActorRef wordStatsActor;
-    
+    private final ActorRef channelProfileActor;
+
     public static Props props(ActorSystem system, WSClient ws) {
         return Props.create(SupervisorActor.class, system, ws);
     }
 
     public SupervisorActor(ActorSystem system, WSClient ws) {
-        searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null, null), "searchActor");
+        searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null, null, null), "searchActor");
         helperActor = getContext().actorOf(HelperActor.props(system, ws), "helperActor");
         sentimentAnalysisActor = getContext().actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
         readibilityCalculatorActor = getContext().actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
         wordStatsActor = getContext().actorOf(WordStatsActor.props(), "wordStatsActor");
-
+        channelProfileActor = getContext().actorOf(ChannelProfileActor.props(new ChannelProfileService(ws)), "channelProfileActor");
         getContext().watch(searchActor);
         getContext().watch(helperActor);
         getContext().watch(sentimentAnalysisActor);
         getContext().watch(readibilityCalculatorActor);
         getContext().watch(wordStatsActor);
-        
+        getContext().watch(channelProfileActor);
     }
 
     @Override
@@ -49,7 +50,7 @@ public class SupervisorActor extends AbstractActor {
                 .match(Terminated.class, t -> {
                     if (t.getActor().equals(searchActor)) {
                         System.out.println("Search actor terminated");
-                        getContext().actorOf(SearchActor.props(null, "test query", null, null, null, null), "searchActor");
+                        getContext().actorOf(SearchActor.props(null, "test query", null, null, null, null, null), "searchActor");
                     } else if (t.getActor().equals(helperActor)) {
                         System.out.println("Helper actor terminated");
                         getContext().actorOf(HelperActor.props(null, null), "helperActor");
@@ -64,6 +65,10 @@ public class SupervisorActor extends AbstractActor {
                     else if (t.getActor().equals(wordStatsActor)) {
                         System.out.println("Word stats actor terminated");
                         getContext().actorOf(WordStatsActor.props(), "wordStatsActor");
+                    }
+                    else if (t.getActor().equals(channelProfileActor)) {
+                        System.out.println("Channel profile actor terminated, restarting...");
+                        getContext().actorOf(ChannelProfileActor.props(new ChannelProfileService(null)), "channelProfileActor");
                     }
                 })
                 .build();

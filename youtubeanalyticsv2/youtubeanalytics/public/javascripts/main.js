@@ -143,6 +143,12 @@ function searchVideos() {
 	);
 }
 
+function getChannelProfileUrl(channelId) {
+    const encodedChannelId = encodeURIComponent(channelId);
+    return `/channelProfile/${encodedChannelId}`;
+}
+
+
 function displayResults(data) {
 	// $("#results").empty();
 
@@ -161,10 +167,12 @@ function displayResults(data) {
 	data.items.forEach((item) => {
 		const videoId = item.id.videoId;
 		const snippet = item.snippet;
+		const channelId = item.channelId;
 		const html = `
             <div class="video-item">
                 <h3><p>Title: <a href="https://www.youtube.com/watch?v=${videoId}" target="_blank">${snippet.title}</a></p></h3>
-                <h3><p>Channel: <a href="/channel/${encodeURIComponent(snippet.channelId)}" target="_blank">${snippet.channelTitle}</a></p></h3>
+                 <h3><p>Channel: <a href="${getChannelProfileUrl(channelId)}" target="_blank">${snippet.channelTitle}</a></p></h3>
+
                 <img class="thumbnail" style="top: 0; right: 0; width: 100px; height: auto;" src="${snippet.thumbnails.default.url}">
                 <h3><p>Description:</h3> ${item.description}</p>
                 <b><p>Flesch-Kincaid Grade Level:</b> ${item.fleschKincaidGradeLevel || "N/A"}</p>

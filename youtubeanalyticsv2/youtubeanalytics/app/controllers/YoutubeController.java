@@ -10,17 +10,25 @@ import akka.actor.Actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.pattern.Patterns;
 import akka.stream.Materializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
+import services.ChannelProfileService;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 import play.cache.AsyncCacheApi;
+import play.libs.Json;
+import com.fasterxml.jackson.core.type.TypeReference;
 import play.libs.streams.ActorFlow;
 import play.libs.ws.WSClient;
 import play.mvc.*;
 import services.ReadabilityCalculator;
-
 /**
  * This controller contains an action to handle HTTP requests
  * to the application's home page.
@@ -34,7 +42,7 @@ public class YoutubeController extends Controller {
 	private final ActorRef readabilityCalculatorActor;
 	private final ActorRef sentimentAnalysisActor;
 	private final ActorRef supervisorActor;
-	
+	private final ActorRef channelProfileActor;
 	private final ActorRef wordStatsActor;
 	//	private final ActorRef helperActor;
 
@@ -65,6 +73,8 @@ public class YoutubeController extends Controller {
 		this.wordStatsActor = system.actorOf(
 				WordStatsActor.props()
 		);
+		ChannelProfileService channelProfileService = new ChannelProfileService(ws);
+		this.channelProfileActor = system.actorOf(ChannelProfileActor.props(channelProfileService));
 		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
 		//		system.actorOf(Props.create(TestActor.class));
 	}
@@ -104,11 +114,36 @@ public class YoutubeController extends Controller {
 							query,
 							cache,
 							readabilityCalculatorActor,
-							sentimentAnalysisActor, wordStatsActor
+							sentimentAnalysisActor, wordStatsActor,
+								channelProfileActor
 						)
 					)
 			);
 		}
 		return searchActors.get(query);
+	}
+	public CompletionStage<Result> getChannelProfile(String channelId) {
+		System.out.println("Received Channel ID in Controller: " + channelId);
+
+		String decodedChannelId = URLDecoder.decode(channelId, StandardCharsets.UTF_8);
+		System.out.println("Decoded Channel ID: " + decodedChannelId);
+
+		// Send the channel ID to ChannelProfileActor
+		return Patterns.ask(
+						channelProfileActor,
+						new ChannelProfileActor.InitChannelProfileService(decodedChannelId),
+						java.time.Duration.ofSeconds(10)
+				)
+				.thenApply(response -> {
+						ObjectNode results = (ObjectNode) response;
+
+					JsonNode channelDetails = results.get("channelDetails");
+					JsonNode latestVideos = results.get("latestVideos");
+
+						System.out.println("LatestVideo" + latestVideos);
+						System.out.println("channelDetails"+ channelDetails);
+					System.out.println("Response"+ response);
+						return ok(views.html.channelprofile.render(channelDetails, latestVideos));
+				});
 	}
 }
