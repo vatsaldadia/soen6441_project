@@ -9,40 +9,17 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import play.libs.Json;
 
+
+/**
+ * Message passing class
+ * @author Mohnish Mirchandani
+ */
 public class Messages {
 
-	// Search Messages
-	public static class SearchRequest {
-
-		private final String query;
-
-		public SearchRequest(String query) {
-			this.query = query;
-		}
-
-		public String getQuery() {
-			return query;
-		}
-	}
-
-	public static class SearchUpdate {
-
-		private final String status;
-		private final JsonNode data;
-
-		public SearchUpdate(String status, JsonNode data) {
-			this.status = status;
-			this.data = data;
-		}
-
-		public JsonNode toJson() {
-			ObjectNode result = Json.newObject();
-			result.put("status", status);
-			result.set("data", data);
-			return result;
-		}
-	}
-
+	/**
+	 * Class for terminating actors
+	 * @author Mohnish Mirchandani
+	 */
 	public static class TerminateActor {
     }
     

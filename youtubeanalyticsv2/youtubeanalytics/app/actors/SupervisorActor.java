@@ -16,6 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 import services.ReadabilityCalculator;
 
+/**
+ * SupervisorActor is responsible for supervising other actors and restarting them if they fail.
+ * @author Mohnish Mirchandani
+ */
 public class SupervisorActor extends AbstractActor {
 
     private final ActorRef searchActor;
@@ -25,10 +29,27 @@ public class SupervisorActor extends AbstractActor {
     private final ActorRef wordStatsActor;
     private final ActorRef channelProfileActor;
 
+
+    /**
+     * Creates Props for an actor of this type.
+     *
+     * @param system The ActorSystem to create actors in.
+     * @param ws The WSClient for making HTTP requests.
+     * @return A Props for creating this actor.
+     * @author Mohnish Mirchandani
+     */
     public static Props props(ActorSystem system, WSClient ws) {
         return Props.create(SupervisorActor.class, system, ws);
     }
 
+    /**
+     * Creates Props for an actor of this type.
+     *
+     * @param system The ActorSystem to create actors in.
+     * @param ws The WSClient for making HTTP requests.
+     * @return A Props for creating this actor.
+     * @author Mohnish Mirchandani
+     */
     public SupervisorActor(ActorSystem system, WSClient ws) {
         searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null, null, null), "searchActor");
         helperActor = getContext().actorOf(HelperActor.props(system, ws), "helperActor");
@@ -43,6 +64,12 @@ public class SupervisorActor extends AbstractActor {
         getContext().watch(wordStatsActor);
         getContext().watch(channelProfileActor);
     }
+
+    /**
+    * Create receive for SupervisorActor
+    * @return Receive
+     * @author Mohnish Mirchandani
+    */
 
     @Override
     public Receive createReceive() {
@@ -73,6 +100,12 @@ public class SupervisorActor extends AbstractActor {
                 })
                 .build();
     }
+
+    /**
+     * Supervisor strategy for SupervisorActor
+     * @return strategy
+     * @author Mohnish Mirchandani
+     */
 
     @Override
     public SupervisorStrategy supervisorStrategy() {

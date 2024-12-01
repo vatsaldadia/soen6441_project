@@ -11,21 +11,34 @@ import play.libs.ws.WSClient;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Unit tests for the HelperActor class.
+ * @author Mohnish Mirchandani
+ */
 public class HelperActorTest {
 
     private static ActorSystem system;
 
+    /**
+     * Sets up the ActorSystem before any tests are run.
+     */
     @BeforeClass
     public static void setup() {
         system = ActorSystem.create();
     }
 
+    /**
+     * Shuts down the ActorSystem after all tests have been run.
+     */
     @AfterClass
     public static void teardown() {
         TestKit.shutdownActorSystem(system);
         system = null;
     }
 
+    /**
+     * Tests that the HelperActor correctly receives and processes a createActor message.
+     */
     @Test
     public void testHelperActorReceivesCreateActorMessage() {
         // Create a mock WSClient

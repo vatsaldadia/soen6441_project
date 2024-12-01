@@ -30,8 +30,8 @@ import play.libs.ws.WSClient;
 import play.mvc.*;
 import services.ReadabilityCalculator;
 /**
- * This controller contains an action to handle HTTP requests
- * to the application's home page.
+ * This controller contains an action to handle HTTP requests to the application's home page.
+ * @author Vatsal Dadia
  */
 public class YoutubeController extends Controller {
 
@@ -48,6 +48,14 @@ public class YoutubeController extends Controller {
 
 	private Map<String, ActorRef> searchActors;
 
+	/**
+	 * Constructor for YoutubeController.
+	 *
+	 * @param ws The WSClient for making HTTP requests.
+	 * @param system The ActorSystem to create actors in.
+	 * @param materializer The Materializer for stream handling.
+	 * @author Vatsal Dadia
+	 */
 	@Inject
 	public YoutubeController(
 		WSClient ws,
@@ -81,19 +89,29 @@ public class YoutubeController extends Controller {
 
 	/**
 	 * An action that renders an HTML page with a welcome message.
-	 * The configuration in the <code>routes</code> file means that
-	 * this method will be called when the application receives a
-	 * <code>GET</code> request with a path of <code>/</code>.
+	 * @author Vatsal Dadia
 	 */
 	public Result index() {
 		return ok(views.html.search.render());
 	}
 
+	/**
+	 * An action that retrieves word statistics for a given query.
+	 *
+	 * @param query The search query.
+	 * @return A Result rendering the word statistics page.
+	 * @author Rolwyn Raju
+	 */
 	public Result getWordStats(String query) {
 		JsonNode wordStats = WordStatsActor.wordStatsMap.get(query);
 		return ok(views.html.wordstats.render(wordStats, query));
 	}
 
+	/**
+	 * Creates a WebSocket connection.
+	 * @return A WebSocket connection.
+	 * @author Vatsal Dadia
+	 */
 	public WebSocket ws() {
 		return WebSocket.Json.accept(request ->
 			ActorFlow.actorRef(
@@ -104,6 +122,13 @@ public class YoutubeController extends Controller {
 		);
 	}
 
+	/**
+	 * Retrieves or creates a SearchActor for a given query.
+	 *
+	 * @param query The search query.
+	 * @return The ActorRef for the SearchActor.
+	 * @author Vatsal Dadia
+	 */
 	public ActorRef getSearchActor(String query) {
 		if (!searchActors.containsKey(query)) {
 			searchActors.put(

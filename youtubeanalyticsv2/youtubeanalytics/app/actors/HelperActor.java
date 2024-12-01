@@ -8,7 +8,10 @@ import messages.Messages.TerminateActor;
 import java.util.HashSet;
 import java.util.Set;
 
-
+/**
+ * HelperActor is responsible for managing search queries and creating SearchActor instances.
+ * @author Vatsal Dadia
+ */
 public class HelperActor extends AbstractActor {
 
     private Set<String> queries = new HashSet<>();
@@ -16,23 +19,50 @@ public class HelperActor extends AbstractActor {
     private ActorSystem system;
     private WSClient ws;
 
+    /**
+     * Creates Props for an actor of this type.
+     *
+     * @param system The ActorSystem to create actors in.
+     * @param ws The WSClient for making HTTP requests.
+     * @return A Props for creating this actor.
+     */
     public static Props props(ActorSystem system, WSClient ws){
         return Props.create(HelperActor.class, system, ws);
     }
 
+    /**
+     * Constructor for HelperActor.
+     *
+     * @param system The ActorSystem to create actors in.
+     * @param ws The WSClient for making HTTP requests.
+     */
     public HelperActor(ActorSystem system, WSClient ws) {
         this.system = system;
         this.ws = ws;
     }
 
+    /**
+     * Message class for creating a SearchActor.
+     */
     public static class createActor {
 
         private final String query;
+
+        /**
+         * Constructor for createActor.
+         *
+         * @param query The search query.
+         */
         public createActor(String query) {
 //            System.out.println("hgv\nj");
             this.query = query;
         }
 
+        /**
+         * Gets the search query.
+         *
+         * @return The search query.
+         */
         public String getQuery() {
             return query;
         }
