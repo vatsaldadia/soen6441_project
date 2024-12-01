@@ -16,6 +16,14 @@ import java.util.concurrent.TimeUnit;
 
 import services.ReadabilityCalculator;
 
+/**
+ * SupervisorActor is responsible for supervising other actors and restarting them if they fail.
+ * @author Vatsal Dadia
+ * @author Mohnish Mirchandani
+ * @author Rolwyn Raju
+ * @author Pretty Kotian
+ * @author Elston Farel
+ */
 public class SupervisorActor extends AbstractActor {
 
     private final ActorRef searchActor;
@@ -23,11 +31,31 @@ public class SupervisorActor extends AbstractActor {
     private final ActorRef sentimentAnalysisActor;
     private final ActorRef readibilityCalculatorActor;
     private final ActorRef wordStatsActor;
-    
+
+    /**
+     * Creates Props for an actor of this type.
+     *
+     * @param system The ActorSystem to create actors in.
+     * @param ws The WSClient for making HTTP requests.
+     * @return A Props for creating this actor.
+     * @author Mohnish Mirchandani
+     */
     public static Props props(ActorSystem system, WSClient ws) {
         return Props.create(SupervisorActor.class, system, ws);
     }
 
+    /**
+     * Creates Props for an actor of this type.
+     *
+     * @param system The ActorSystem to create actors in.
+     * @param ws The WSClient for making HTTP requests.
+     * @return A Props for creating this actor.
+     * @author Mohnish Mirchandani
+     * @author Vatsal Dadia
+     * @author Rolwyn Raju
+     * @author Pretty Kotian
+     * @author Elston Farel
+     */
     public SupervisorActor(ActorSystem system, WSClient ws) {
         searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null, null), "searchActor");
         helperActor = getContext().actorOf(HelperActor.props(system, ws), "helperActor");

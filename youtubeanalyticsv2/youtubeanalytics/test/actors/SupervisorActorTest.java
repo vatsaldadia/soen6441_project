@@ -19,21 +19,38 @@ import static org.mockito.Mockito.mock;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Unit tests for the SupervisorActor class.
+ * @author Mohnish Mirchandani
+ * @author Vatsal Dadia
+ * @author Rolwyn Raju
+ * @author Pretty Kotian
+ * @author Elston Farel
+ */
 public class SupervisorActorTest {
 
     private static ActorSystem system;
 
+    /**
+     * Sets up the ActorSystem before each test.
+     */
     @Before
     public void setup() {
         system = ActorSystem.create();
     }
 
+    /**
+     * Shuts down the ActorSystem after each test.
+     */
     @After
     public void teardown() {
         TestKit.shutdownActorSystem(system);
         system = null;
     }
 
+    /**
+     * Tests the SupervisorActor's behavior when child actors are terminated.
+     */
     @Test
     public void testSupervisorActor() {
         new TestKit(system) {{

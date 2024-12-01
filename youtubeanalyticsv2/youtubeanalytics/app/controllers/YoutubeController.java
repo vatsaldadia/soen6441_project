@@ -40,6 +40,13 @@ public class YoutubeController extends Controller {
 
 	private Map<String, ActorRef> searchActors;
 
+	/**
+	 * Constructor for YoutubeController.
+	 *
+	 * @param ws The WSClient for making HTTP requests.
+	 * @param system The ActorSystem to create actors in.
+	 * @param materializer The Materializer for stream handling.
+	 */
 	@Inject
 	public YoutubeController(
 		WSClient ws,
@@ -79,11 +86,23 @@ public class YoutubeController extends Controller {
 		return ok(views.html.search.render());
 	}
 
+	/**
+	 * An action that retrieves word statistics for a given query.
+	 *
+	 * @param query The search query.
+	 * @return A Result rendering the word statistics page.
+	 * @author Rolwyn Raju
+	 */
 	public Result getWordStats(String query) {
 		JsonNode wordStats = WordStatsActor.wordStatsMap.get(query);
 		return ok(views.html.wordstats.render(wordStats, query));
 	}
 
+	/**
+	 * Creates a WebSocket connection.
+	 *
+	 * @return A WebSocket connection.
+	 */
 	public WebSocket ws() {
 		return WebSocket.Json.accept(request ->
 			ActorFlow.actorRef(
@@ -94,6 +113,12 @@ public class YoutubeController extends Controller {
 		);
 	}
 
+	/**
+	 * Retrieves or creates a SearchActor for a given query.
+	 *
+	 * @param query The search query.
+	 * @return The ActorRef for the SearchActor.
+	 */
 	public ActorRef getSearchActor(String query) {
 		if (!searchActors.containsKey(query)) {
 			searchActors.put(

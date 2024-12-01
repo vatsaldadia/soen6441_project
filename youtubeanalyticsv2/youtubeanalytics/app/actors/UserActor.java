@@ -15,6 +15,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * UserActor handles WebSocket messages and manages search history and responses.
+ * @author Vatsal Dadia
+ */
 public class UserActor extends AbstractActor {
 
 	private final ActorRef wsout;
@@ -24,10 +28,23 @@ public class UserActor extends AbstractActor {
 	private final List<String> searchHistory;
 	private Map<String, ObjectNode> searchResponses;
 
+	/**
+	 * Creates Props for an actor of this type.
+	 *
+	 * @param wsout The WebSocket output actor.
+	 * @param youtubeController The YouTube controller.
+	 * @return A Props for creating this actor.
+	 */
 	public static Props props(ActorRef wsout, YoutubeController youtubeController) {
 		return Props.create(UserActor.class, wsout, youtubeController);
 	}
 
+	/**
+	 * Constructor for UserActor.
+	 *
+	 * @param wsout The WebSocket output actor.
+	 * @param youtubeController The YouTube controller.
+	 */
 	public UserActor(ActorRef wsout, YoutubeController youtubeController) {
 		this.wsout = wsout;
 //		this.ws = ws;
@@ -56,6 +73,11 @@ public class UserActor extends AbstractActor {
 			.build();
 	}
 
+	/**
+	 * Handles incoming WebSocket messages.
+	 *
+	 * @param json The incoming JSON message.
+	 */
 	private void handleWebSocketMessage(JsonNode json) {
 		if (json.get("action").asText().equals("search")) {
 			String query = json.get("query").asText();
@@ -68,6 +90,9 @@ public class UserActor extends AbstractActor {
 		}
 	}
 
+	/**
+	 * Handles search updates by sending the latest search responses to the WebSocket output.
+	 */
 	private void handleSearchUpdate() {
 		ArrayNode responses = JsonNodeFactory.instance.arrayNode();
 		searchHistory.stream()

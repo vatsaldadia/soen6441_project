@@ -26,6 +26,12 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static play.test.Helpers.contentAsString;
 
+/**
+ * Tests the UserActor's handling of invalid messages.
+ * @author Mohnish Mirchandani
+ * @author Vatsal Dadia
+ * @author Rolwyn Raju
+ */
 public class YoutubeControllerTest extends WithApplication {
 
     private ActorSystem actorSystem;
@@ -33,6 +39,9 @@ public class YoutubeControllerTest extends WithApplication {
     private WSClient ws;
     private YoutubeController youtubeController;
 
+    /**
+     * Sets up the test environment before each test.
+     */
     @Before
     public void setup() {
         actorSystem = ActorSystem.create();
@@ -41,18 +50,27 @@ public class YoutubeControllerTest extends WithApplication {
         youtubeController = new YoutubeController(ws, actorSystem, materializer);
     }
 
+    /**
+     * Cleans up the test environment after each test.
+     */
     @After
     public void teardown() {
         Helpers.stop(play.test.Helpers.fakeApplication());
         actorSystem.terminate();
     }
 
+    /**
+     * Tests the index method of the YoutubeController.
+     */
     @Test
     public void testIndex() {
         Result result = youtubeController.index();
         assertEquals(200, result.status());
     }
 
+    /**
+     * Tests the getSearchActor method of the YoutubeController.
+     */
     @Test
     public void testGetSearchActor() {
         String query = "test query";
@@ -61,30 +79,46 @@ public class YoutubeControllerTest extends WithApplication {
         assertEquals(searchActor, youtubeController.getSearchActor(query));
     }
 
+    /**
+     * Tests the creation of search actors in the YoutubeController.
+     */
     @Test
     public void testActorsCreation() {
         assertNotNull(youtubeController.getSearchActor("test query"));
         assertNotNull(youtubeController.getSearchActor("another query"));
     }
 
+    /**
+     * Tests the creation of the SupervisorActor in the YoutubeController.
+     */
     @Test
     public void testSupervisorActor() {
         ActorRef supervisorActor = actorSystem.actorOf(SupervisorActor.props(actorSystem, ws), "supervisor");
         assertNotNull(supervisorActor);
     }
 
+    /**
+     * Tests the creation of the ReadabilityCalculator actor in the YoutubeController.
+     */
     @Test
     public void testReadabilityCalculatorActor() {
         ActorRef readabilityCalculatorActor = actorSystem.actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
         assertNotNull(readabilityCalculatorActor);
     }
 
+    /**
+     * Tests the creation of the SentimentAnalysisActor in the YoutubeController.
+     */
     @Test
     public void testSentimentAnalysisActor() {
         ActorRef sentimentAnalysisActor = actorSystem.actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
         assertNotNull(sentimentAnalysisActor);
     }
 
+    /**
+     * Tests the getWordStats method of the YoutubeController.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testGetWordStats() {
         // Prepare test data

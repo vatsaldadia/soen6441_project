@@ -34,6 +34,10 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+/**
+ * Unit tests for the SearchActor class.
+ * @author Mohnish Mirchandani
+ */
 public class SearchActorTest {
         private static ActorSystem system;
 
@@ -49,18 +53,27 @@ public class SearchActorTest {
         @Mock
         private AsyncCacheApi mockCache;
 
+        /**
+         * Sets up the ActorSystem and initializes mocks before each test.
+         */
         @Before
         public void setup() {
                 system = ActorSystem.create();
                 MockitoAnnotations.initMocks(this);
         }
 
+        /**
+         * Shuts down the ActorSystem after each test.
+         */
         @After
         public void teardown() {
                 TestKit.shutdownActorSystem(system);
                 system = null;
         }
 
+        /**
+         * Tests that the SearchActor does not perform a search when the user list is empty.
+         */
         @Test
         public void testHandleSearchWithEmptyUserList() {
                 new TestKit(system) {
@@ -93,6 +106,9 @@ public class SearchActorTest {
                 };
         }
 
+        /**
+         * Tests the complete workflow of the SearchActor, including interactions with other actors.
+         */
         @Test
         public void testSearchActorWorkflow() {
                 System.out.println("SearchActorTest.testSearchActorWorkflow");
