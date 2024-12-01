@@ -65,6 +65,13 @@ public class YoutubeController extends Controller {
 		this.wordStatsActor = system.actorOf(
 				WordStatsActor.props()
 		);
+
+
+		supervisorActor.tell(new SupervisorActor.AddActor(readabilityCalculatorActor), ActorRef.noSender());
+        supervisorActor.tell(new SupervisorActor.AddActor(sentimentAnalysisActor), ActorRef.noSender());
+        supervisorActor.tell(new SupervisorActor.AddActor(wordStatsActor), ActorRef.noSender());
+        // supervisorActor.tell(new SupervisorActor.AddActor(helperActor), ActorRef.noSender());
+
 		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
 		//		system.actorOf(Props.create(TestActor.class));
 	}
@@ -109,6 +116,9 @@ public class YoutubeController extends Controller {
 					)
 			);
 		}
+
+		supervisorActor.tell(new SupervisorActor.AddActor(searchActors.get(query)), ActorRef.noSender());
+        
 		return searchActors.get(query);
 	}
 }

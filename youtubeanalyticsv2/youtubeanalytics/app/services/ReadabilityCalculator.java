@@ -2,6 +2,8 @@ package services;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import messages.Messages.TerminateActor;
+import services.ReadabilityCalculator.ReadabilityResults;
 
 import java.util.List;
 
@@ -20,6 +22,10 @@ public class ReadabilityCalculator extends AbstractActor{
                     double readingScore = calculateFleschReadingScore(message.description);
                     System.out.println("Readibility init");
                     getSender().tell(new ReadabilityResults(message.videoId, gradeLevel, readingScore), getSelf());
+                })
+                .match(TerminateActor.class, message -> {
+                    System.out.println("Terminating ReadabilityActor");
+                    getContext().stop(getSelf());
                 })
                 .build();
     }
