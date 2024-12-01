@@ -34,6 +34,7 @@ public class UserActor extends AbstractActor {
 	 * @param wsout The WebSocket output actor.
 	 * @param youtubeController The YouTube controller.
 	 * @return A Props for creating this actor.
+	 * @author Vatsal Dadia
 	 */
 	public static Props props(ActorRef wsout, YoutubeController youtubeController) {
 		return Props.create(UserActor.class, wsout, youtubeController);
@@ -44,6 +45,7 @@ public class UserActor extends AbstractActor {
 	 *
 	 * @param wsout The WebSocket output actor.
 	 * @param youtubeController The YouTube controller.
+	 * @author Vatsal Dadia
 	 */
 	public UserActor(ActorRef wsout, YoutubeController youtubeController) {
 		this.wsout = wsout;
@@ -60,6 +62,12 @@ public class UserActor extends AbstractActor {
 	// 	}
 	// }
 
+	/**
+	 * Creates the receive behavior for this actor.
+	 * @return The receive behavior for this actor.
+	 * @author Vatsal Dadia
+	 */
+
 	@Override
 	public Receive createReceive() {
 		return receiveBuilder()
@@ -75,8 +83,8 @@ public class UserActor extends AbstractActor {
 
 	/**
 	 * Handles incoming WebSocket messages.
-	 *
 	 * @param json The incoming JSON message.
+	 * @author Vatsal Dadia
 	 */
 	private void handleWebSocketMessage(JsonNode json) {
 		if (json.get("action").asText().equals("search")) {
@@ -92,6 +100,7 @@ public class UserActor extends AbstractActor {
 
 	/**
 	 * Handles search updates by sending the latest search responses to the WebSocket output.
+	 * @author Vatsal Dadia
 	 */
 	private void handleSearchUpdate() {
 		ArrayNode responses = JsonNodeFactory.instance.arrayNode();

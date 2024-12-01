@@ -33,7 +33,7 @@ import static actors.WordStatsActor.wordStatsMap;
 
 /**
  * Actor responsible for handling YouTube search queries and processing video data.
- * @author Mohnish Mirchandani
+ * @author Mohnish Mirchandani, Vatsal Dadia
  */
 public class SearchActor extends AbstractActorWithTimers {
 
@@ -60,9 +60,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	 * @param readabilityCalculatorActor ActorRef for readability calculations.
 	 * @param sentimentAnalysisActor ActorRef for sentiment analysis.
 	 * @param wordStatsActor ActorRef for word statistics.
-	 * @author Mohnish Mirchandani
-	 * @author Vatsal Dadia
-	 * @author Rolwyn Raju
+	 * @author Mohnish Mirchandani, Vatsal Dadia
 	 */
 	public SearchActor(
 		WSClient ws,
@@ -93,9 +91,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	 * @param sentimentAnalysisActor ActorRef for sentiment analysis.
 	 * @param wordStatsActor ActorRef for word statistics.
 	 * @return A Props for creating this actor.
-	 * @author Mohnish Mirchandani
-	 * @author Vatsal Dadia
-	 * @author Rolwyn Raju
+	 * @author Mohnish Mirchandani, @author Vatsal Dadia
 	 */
 	public static Props props(
 		WSClient ws,
@@ -253,7 +249,7 @@ public class SearchActor extends AbstractActorWithTimers {
 
 	/**
 	 * Handles the search operation by making a request to the YouTube API and processing the results.
-	 * @author Vatsal Dadia
+	 * @author Vatsal Dadia, Mohnish Mirchandani
 	 */
 	private void handleSearch() {
 		if (!userActorList.isEmpty()) {

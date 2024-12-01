@@ -22,10 +22,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Unit tests for the SupervisorActor class.
  * @author Mohnish Mirchandani
- * @author Vatsal Dadia
- * @author Rolwyn Raju
- * @author Pretty Kotian
- * @author Elston Farel
  */
 public class SupervisorActorTest {
 
@@ -33,6 +29,7 @@ public class SupervisorActorTest {
 
     /**
      * Sets up the ActorSystem before each test.
+     * @author Mohnish Mirchandani
      */
     @Before
     public void setup() {
@@ -41,6 +38,7 @@ public class SupervisorActorTest {
 
     /**
      * Shuts down the ActorSystem after each test.
+     * @author Mohnish Mirchandani
      */
     @After
     public void teardown() {
@@ -50,6 +48,7 @@ public class SupervisorActorTest {
 
     /**
      * Tests the SupervisorActor's behavior when child actors are terminated.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testSupervisorActor() {

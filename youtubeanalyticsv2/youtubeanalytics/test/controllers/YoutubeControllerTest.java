@@ -29,8 +29,6 @@ import static play.test.Helpers.contentAsString;
 /**
  * Tests the UserActor's handling of invalid messages.
  * @author Mohnish Mirchandani
- * @author Vatsal Dadia
- * @author Rolwyn Raju
  */
 public class YoutubeControllerTest extends WithApplication {
 
@@ -41,6 +39,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Sets up the test environment before each test.
+     * @author Mohnish Mirchandani
      */
     @Before
     public void setup() {
@@ -52,6 +51,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Cleans up the test environment after each test.
+     * @author Mohnish Mirchandani
      */
     @After
     public void teardown() {
@@ -61,6 +61,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Tests the index method of the YoutubeController.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testIndex() {
@@ -70,6 +71,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Tests the getSearchActor method of the YoutubeController.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testGetSearchActor() {
@@ -81,6 +83,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Tests the creation of search actors in the YoutubeController.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testActorsCreation() {
@@ -90,6 +93,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Tests the creation of the SupervisorActor in the YoutubeController.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testSupervisorActor() {
@@ -99,6 +103,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Tests the creation of the ReadabilityCalculator actor in the YoutubeController.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testReadabilityCalculatorActor() {
@@ -108,6 +113,7 @@ public class YoutubeControllerTest extends WithApplication {
 
     /**
      * Tests the creation of the SentimentAnalysisActor in the YoutubeController.
+     * @author Mohnish Mirchandani
      */
     @Test
     public void testSentimentAnalysisActor() {

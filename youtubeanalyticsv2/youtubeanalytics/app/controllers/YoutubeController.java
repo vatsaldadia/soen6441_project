@@ -22,8 +22,8 @@ import play.mvc.*;
 import services.ReadabilityCalculator;
 
 /**
- * This controller contains an action to handle HTTP requests
- * to the application's home page.
+ * This controller contains an action to handle HTTP requests to the application's home page.
+ * @author Vatsal Dadia
  */
 public class YoutubeController extends Controller {
 
@@ -46,6 +46,7 @@ public class YoutubeController extends Controller {
 	 * @param ws The WSClient for making HTTP requests.
 	 * @param system The ActorSystem to create actors in.
 	 * @param materializer The Materializer for stream handling.
+	 * @author Vatsal Dadia
 	 */
 	@Inject
 	public YoutubeController(
@@ -78,9 +79,7 @@ public class YoutubeController extends Controller {
 
 	/**
 	 * An action that renders an HTML page with a welcome message.
-	 * The configuration in the <code>routes</code> file means that
-	 * this method will be called when the application receives a
-	 * <code>GET</code> request with a path of <code>/</code>.
+	 * @author Vatsal Dadia
 	 */
 	public Result index() {
 		return ok(views.html.search.render());
@@ -100,8 +99,8 @@ public class YoutubeController extends Controller {
 
 	/**
 	 * Creates a WebSocket connection.
-	 *
 	 * @return A WebSocket connection.
+	 * @author Vatsal Dadia
 	 */
 	public WebSocket ws() {
 		return WebSocket.Json.accept(request ->
@@ -118,6 +117,7 @@ public class YoutubeController extends Controller {
 	 *
 	 * @param query The search query.
 	 * @return The ActorRef for the SearchActor.
+	 * @author Vatsal Dadia
 	 */
 	public ActorRef getSearchActor(String query) {
 		if (!searchActors.containsKey(query)) {

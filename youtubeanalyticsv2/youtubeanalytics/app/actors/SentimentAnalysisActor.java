@@ -8,12 +8,27 @@ import java.util.List;
 import services.SentimentAnalyzer;
 
 
-
+/**
+ * Actor for SentimentAnalyser
+ * @author Mohnish Mirchandani
+ */
 public class SentimentAnalysisActor extends AbstractActor {
 
+
+	/**
+	 * Props for SentimentAnalysisActor
+	 * @return Props
+	 * @author Mohnish Mirchandani
+	 */
 	public static Props props() {
 		return Props.create(SentimentAnalysisActor.class);
 	}
+
+	/**
+	 * Create receive for SentimentAnalysisActor
+	 * @return Receive
+	 * @author Mohnish Mirchandani
+	 */
 
 	@Override
 	public Receive createReceive() {
@@ -36,6 +51,11 @@ public class SentimentAnalysisActor extends AbstractActor {
 			.build();
 	}
 
+	/**
+	 * Class for initializing SentimentAnalyzerService
+	 * @author Mohnish Mirchandani
+	 */
+
 	public static class initSentimentAnalyzerService {
 
 		public String query;
@@ -49,6 +69,11 @@ public class SentimentAnalysisActor extends AbstractActor {
 			this.descriptions = descriptions;
 		}
 	}
+
+	/**
+	 * Class for SentimentAnalysisResults
+	 * @author Mohnish Mirchandani
+	 */
 
 	public static class SentimentAnalysisResults {
 

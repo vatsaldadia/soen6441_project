@@ -16,19 +16,42 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
+
+/**
+ * Test class for the SentimentAnalysisActor.
+ * This class tests the sentiment analysis actor by sending it test data and verifying the response.
+ * The test data includes positive, negative, neutral, and mixed sentiment descriptions.
+ * The actor should return the correct sentiment for each test case.
+ * @author Mohnish Mirchandani
+ */
 public class SentimentAnalysisActorTest {
     private static ActorSystem system;
+
+    /**
+     * Setup the actor system before running the tests.
+     * @author Mohnish Mirchandani
+     */
 
     @BeforeClass
     public static void setup() {
         system = ActorSystem.create("TestSystem");
     }
 
+    /**
+     * Remove the actor system after running the tests.
+     * @author Mohnish Mirchandani
+     */
+
     @AfterClass
     public static void teardown() {
         TestKit.shutdownActorSystem(system);
         system = null;
     }
+
+    /**
+     * Test positive sentiment analysis.
+     * @author Mohnish Mirchandani
+     */
 
     @Test
     public void testPositiveSentimentAnalysis() {
@@ -66,6 +89,11 @@ public class SentimentAnalysisActorTest {
         }};
     }
 
+    /**
+     * Test negative sentiment analysis.
+     * @author Mohnish Mirchandani
+     */
+
     @Test
     public void testNegativeSentimentAnalysis() {
         new TestKit(system) {{
@@ -101,6 +129,11 @@ public class SentimentAnalysisActorTest {
             assertEquals(":-(", response.sentiment);
         }};
     }
+
+    /**
+     * Test neutral sentiment analysis.
+     * @author Mohnish Mirchandani
+     */
 
     @Test
     public void testNeutralSentimentAnalysis() {
@@ -138,6 +171,11 @@ public class SentimentAnalysisActorTest {
         }};
     }
 
+    /**
+     * Test empty sentiment analysis.
+     * @author Mohnish Mirchandani
+     */
+
     @Test
     public void testEmptyDescriptionsSentimentAnalysis() {
         new TestKit(system) {{
@@ -170,6 +208,11 @@ public class SentimentAnalysisActorTest {
             assertEquals(":-|", response.sentiment);
         }};
     }
+
+    /**
+     * Test mixed sentiment analysis.
+     * @author Mohnish Mirchandani
+     */
 
     @Test
     public void testMixedSentimentAnalysis() {

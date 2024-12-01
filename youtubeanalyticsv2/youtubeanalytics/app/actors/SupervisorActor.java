@@ -18,11 +18,7 @@ import services.ReadabilityCalculator;
 
 /**
  * SupervisorActor is responsible for supervising other actors and restarting them if they fail.
- * @author Vatsal Dadia
  * @author Mohnish Mirchandani
- * @author Rolwyn Raju
- * @author Pretty Kotian
- * @author Elston Farel
  */
 public class SupervisorActor extends AbstractActor {
 
@@ -51,10 +47,6 @@ public class SupervisorActor extends AbstractActor {
      * @param ws The WSClient for making HTTP requests.
      * @return A Props for creating this actor.
      * @author Mohnish Mirchandani
-     * @author Vatsal Dadia
-     * @author Rolwyn Raju
-     * @author Pretty Kotian
-     * @author Elston Farel
      */
     public SupervisorActor(ActorSystem system, WSClient ws) {
         searchActor = getContext().actorOf(SearchActor.props(ws, "test query", null, null, null, null), "searchActor");
@@ -70,6 +62,12 @@ public class SupervisorActor extends AbstractActor {
         getContext().watch(wordStatsActor);
         
     }
+
+    /**
+    * Create receive for SupervisorActor
+    * @return Receive
+     * @author Mohnish Mirchandani
+    */
 
     @Override
     public Receive createReceive() {
@@ -96,6 +94,12 @@ public class SupervisorActor extends AbstractActor {
                 })
                 .build();
     }
+
+    /**
+     * Supervisor strategy for SupervisorActor
+     * @return strategy
+     * @author Mohnish Mirchandani
+     */
 
     @Override
     public SupervisorStrategy supervisorStrategy() {

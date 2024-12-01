@@ -55,6 +55,7 @@ public class SearchActorTest {
 
         /**
          * Sets up the ActorSystem and initializes mocks before each test.
+         * @author Mohnish Mirchandani
          */
         @Before
         public void setup() {
@@ -73,6 +74,7 @@ public class SearchActorTest {
 
         /**
          * Tests that the SearchActor does not perform a search when the user list is empty.
+         * @author Mohnish Mirchandani
          */
         @Test
         public void testHandleSearchWithEmptyUserList() {
@@ -108,6 +110,7 @@ public class SearchActorTest {
 
         /**
          * Tests the complete workflow of the SearchActor, including interactions with other actors.
+         * @author Mohnish Mirchandani
          */
         @Test
         public void testSearchActorWorkflow() {

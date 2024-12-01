@@ -28,6 +28,7 @@ public class UserActorTest {
 
 	/**
 	 * Sets up the ActorSystem and initializes mocks before each test.
+	 * @author Mohnish Mirchandani
 	 */
 	@Before
 	public void setup() {
@@ -37,6 +38,7 @@ public class UserActorTest {
 
 	/**
 	 * Shuts down the ActorSystem after each test.
+	 * @author Mohnish Mirchandani
 	 */
 	@After
 	public void teardown() {
@@ -46,6 +48,7 @@ public class UserActorTest {
 
 	/**
 	 * Tests the search flow of the UserActor.
+	 * @author Mohnish Mirchandani
 	 */
 	@Test
 	public void testSearchFlow() {
@@ -109,6 +112,7 @@ public class UserActorTest {
 
 	/**
 	 * Tests the UserActor's handling of multiple search queries.
+	 * @author Mohnish Mirchandani
 	 */
 	@Test
 	public void testMultipleSearches() {
@@ -163,6 +167,7 @@ public class UserActorTest {
 
 	/**
 	 * Tests the UserActor's handling of invalid messages.
+	 * @author Mohnish Mirchandani
 	 */
 	@Test
 	public void testInvalidMessage() {
