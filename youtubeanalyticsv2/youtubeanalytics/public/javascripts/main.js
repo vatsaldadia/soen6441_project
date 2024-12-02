@@ -177,7 +177,7 @@ function displayResults(data) {
                 <h3><p>Description:</h3> ${item.description}</p>
                 <b><p>Flesch-Kincaid Grade Level:</b> ${item.fleschKincaidGradeLevel || "N/A"}</p>
                 <b><p>Flesch Reading Ease Score:</b> ${item.fleschReadingScore || "N/A"}</p>
-                <a href="/tag?video_id=${videoId}" target="_blank">Tags</a>
+                <a href="/tag/${videoId}" target="_blank">Tags</a>
             </div>
         `;
 		$("#results").append(html);

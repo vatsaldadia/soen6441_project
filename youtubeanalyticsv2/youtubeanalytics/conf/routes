@@ -7,6 +7,6 @@ GET     /                           controllers.YoutubeController.index()
 GET     /ws                         controllers.YoutubeController.ws()
 GET     /wordstats/:query           controllers.YoutubeController.getWordStats(query: String)
 GET     /channelProfile/:channelId     controllers.YoutubeController.getChannelProfile(channelId: String)
-
+GET     /tag/:hashtagId       controllers.YoutubeController.getTagProfile(hashtagId: String)
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
