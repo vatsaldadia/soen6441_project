@@ -19,6 +19,11 @@ import java.util.concurrent.TimeUnit;
 
 import services.ReadabilityCalculator;
 
+/**
+ * 
+ * Actor for SupervisorActor
+ * @author Mohnish Mirchandani
+ */
 public class SupervisorActor extends AbstractActor {
 
     // private final ActorRef searchActor;
@@ -51,30 +56,17 @@ public class SupervisorActor extends AbstractActor {
     @Override
     public Receive createReceive() {
         return receiveBuilder()
-                // .match(Terminated.class, t -> {
-                //     if (t.getActor().equals(searchActor)) {
-                //         System.out.println("Search actor terminated");
-                //         getContext().actorOf(SearchActor.props(null, "test query", null, null, null, null), "searchActor");
-                //     } else if (t.getActor().equals(helperActor)) {
-                //         System.out.println("Helper actor terminated");
-                //         getContext().actorOf(HelperActor.props(null, null), "helperActor");
-                //     } else if (t.getActor().equals(sentimentAnalysisActor)) {
-                //         System.out.println("Sentiment analysis actor terminated");
-                //         getContext().actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
-                //     }
-                //     else if (t.getActor().equals(readibilityCalculatorActor)) {
-                //         System.out.println("Readibility calculator actor terminated");
-                //         getContext().actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
-                //     }
-                //     else if (t.getActor().equals(wordStatsActor)) {
-                //         System.out.println("Word stats actor terminated");
-                //         getContext().actorOf(WordStatsActor.props(), "wordStatsActor");
-                //     }
                 .match(AddActor.class, this::handleAddActor)
                 .match(Terminated.class, this::handleTerminated)
                 .build();
     }
 
+   /**
+	 * supervisor actor handle add actor
+	 * @return void
+     * @param message
+	 * @author Mohnish Mirchandani
+	 */
     private void handleAddActor(AddActor message) {
         ActorRef actorRef = message.actorRef;
         actorRefs.add(actorRef);
@@ -83,6 +75,12 @@ public class SupervisorActor extends AbstractActor {
         System.out.println("Actor added: " + actorRef.path().name());
     }
 
+    /**
+	 * Termination function for supervisor actor
+	 * @return void
+     * @param terminated
+	 * @author Mohnish Mirchandani
+	 */
      private void handleTerminated(Terminated terminated) {
         ActorRef terminatedActor = terminated.getActor();
         for (ActorRef actorRef : actorRefs) {
