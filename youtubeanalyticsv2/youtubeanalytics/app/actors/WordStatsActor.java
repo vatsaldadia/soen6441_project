@@ -37,8 +37,15 @@ public class WordStatsActor extends AbstractActor {
     public Receive createReceive() {
         return receiveBuilder()
                 .match(InitWordStatsService.class, message -> {
-                    Map<String, Long> wordStats = calculateWordStats(message.descriptions);
-                    getSender().tell(new WordStatsResults(message.videoId, wordStats), getSelf());
+                    try{
+                        System.out.println("WordStats init");
+                        Map<String, Long> wordStats = calculateWordStats(message.descriptions);
+                        getSender().tell(new WordStatsResults(message.videoId, wordStats), getSelf());
+                    } catch (Exception e){
+                        throw new RuntimeException("WordStats Analysis Failed");
+                    }
+                    // Map<String, Long> wordStats = calculateWordStats(message.descriptions);
+                    // getSender().tell(new WordStatsResults(message.videoId, wordStats), getSelf());
                 })
                 .match(Messages.TerminateActor.class, message -> {
                     System.out.println("Terminating WordStatsActor");

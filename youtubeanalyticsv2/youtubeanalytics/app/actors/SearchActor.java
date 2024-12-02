@@ -272,7 +272,7 @@ public class SearchActor extends AbstractActorWithTimers {
 			ws
 				.url(YOUTUBE_URL + "/search")
 				.addQueryParameter("part", "snippet")
-				.addQueryParameter("maxResults", "1")
+				.addQueryParameter("maxResults", "10")
 				.addQueryParameter("q", query)
 				.addQueryParameter("type", "video")
 				.addQueryParameter("order", "date")
@@ -432,6 +432,7 @@ public class SearchActor extends AbstractActorWithTimers {
 					});
 				});
 		}
+		
 	}
 
 	/**
