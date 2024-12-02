@@ -41,16 +41,24 @@ public class ChannelProfileActorTest {
         ActorRef channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(channelProfileService));
 
         // Mocking response
-        JsonNode expectedResponse = new ObjectMapper().createObjectNode().put("channelName", "Actor Test Channel");
+        JsonNode expectedChannelDetails = new ObjectMapper().createObjectNode().put("channelName", "Actor Test Channel");
         when(channelProfileService.fetchChannelDetails("UC123456"))
-                .thenReturn(CompletableFuture.completedFuture(expectedResponse));
+                .thenReturn(CompletableFuture.completedFuture(expectedChannelDetails));
 
+        // Mocking response for latest videos
+        JsonNode expectedLatestVideos = new ObjectMapper().createObjectNode().put("videoTitle", "Test Video");
+        when(channelProfileService.fetchLatestVideos("UC123456"))
+                .thenReturn(CompletableFuture.completedFuture(expectedLatestVideos));
+
+                 // Creating the expected combined response
+       
         // Act
         channelProfileActor.tell(new ChannelProfileActor.InitChannelProfileService("UC123456"), testKit.getRef());
 
         // Assert
         JsonNode actualResponse = testKit.expectMsgClass(JsonNode.class);
-        assertEquals(expectedResponse, actualResponse);
+        assertEquals(expectedChannelDetails, actualResponse.get("channelDetails"));
+        assertEquals(expectedLatestVideos, actualResponse.get("latestVideos"));
 
         verify(channelProfileService, times(1)).fetchChannelDetails("UC123456");
     }

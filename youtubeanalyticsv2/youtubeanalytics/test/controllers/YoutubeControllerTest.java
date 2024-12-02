@@ -1,5 +1,6 @@
 package controllers;
 
+import actors.ChannelProfileActor;
 import actors.SearchActor;
 import actors.SupervisorActor;
 import actors.WordStatsActor;
@@ -17,6 +18,7 @@ import play.mvc.Http;
 import play.test.Helpers;
 import play.test.WithApplication;
 import scala.concurrent.duration.Duration;
+import services.ChannelProfileService;
 import services.ReadabilityCalculator;
 import actors.SentimentAnalysisActor;
 
@@ -119,6 +121,18 @@ public class YoutubeControllerTest extends WithApplication {
     public void testSentimentAnalysisActor() {
         ActorRef sentimentAnalysisActor = actorSystem.actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
         assertNotNull(sentimentAnalysisActor);
+    }
+
+    @Test
+    public void testChannelProfileActorCreation() {
+        // Arrange
+        ChannelProfileService mockChannelProfileService = mock(ChannelProfileService.class);
+
+        // Act
+        ActorRef channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(mockChannelProfileService), "channelProfileActor");
+
+        // Assert
+        assertNotNull(channelProfileActor);
     }
 
     /**
