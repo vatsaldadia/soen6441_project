@@ -1,5 +1,6 @@
 package controllers;
 
+import actors.ChannelProfileActor;
 import actors.SearchActor;
 import actors.SupervisorActor;
 import actors.WordStatsActor;
@@ -17,6 +18,7 @@ import play.mvc.Http;
 import play.test.Helpers;
 import play.test.WithApplication;
 import scala.concurrent.duration.Duration;
+import services.ChannelProfileService;
 import services.ReadabilityCalculator;
 import actors.SentimentAnalysisActor;
 
@@ -26,6 +28,10 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import static play.test.Helpers.contentAsString;
 
+/**
+ * Tests the UserActor's handling of invalid messages.
+ * @author Mohnish Mirchandani
+ */
 public class YoutubeControllerTest extends WithApplication {
 
     private ActorSystem actorSystem;
@@ -33,6 +39,10 @@ public class YoutubeControllerTest extends WithApplication {
     private WSClient ws;
     private YoutubeController youtubeController;
 
+    /**
+     * Sets up the test environment before each test.
+     * @author Mohnish Mirchandani
+     */
     @Before
     public void setup() {
         actorSystem = ActorSystem.create();
@@ -41,18 +51,30 @@ public class YoutubeControllerTest extends WithApplication {
         youtubeController = new YoutubeController(ws, actorSystem, materializer);
     }
 
+    /**
+     * Cleans up the test environment after each test.
+     * @author Mohnish Mirchandani
+     */
     @After
     public void teardown() {
         Helpers.stop(play.test.Helpers.fakeApplication());
         actorSystem.terminate();
     }
 
+    /**
+     * Tests the index method of the YoutubeController.
+     * @author Mohnish Mirchandani
+     */
     @Test
     public void testIndex() {
         Result result = youtubeController.index();
         assertEquals(200, result.status());
     }
 
+    /**
+     * Tests the getSearchActor method of the YoutubeController.
+     * @author Mohnish Mirchandani
+     */
     @Test
     public void testGetSearchActor() {
         String query = "test query";
@@ -61,30 +83,62 @@ public class YoutubeControllerTest extends WithApplication {
         assertEquals(searchActor, youtubeController.getSearchActor(query));
     }
 
+    /**
+     * Tests the creation of search actors in the YoutubeController.
+     * @author Mohnish Mirchandani
+     */
     @Test
     public void testActorsCreation() {
         assertNotNull(youtubeController.getSearchActor("test query"));
         assertNotNull(youtubeController.getSearchActor("another query"));
     }
 
+    /**
+     * Tests the creation of the SupervisorActor in the YoutubeController.
+     * @author Mohnish Mirchandani
+     */
     @Test
     public void testSupervisorActor() {
         ActorRef supervisorActor = actorSystem.actorOf(SupervisorActor.props(actorSystem, ws), "supervisor");
         assertNotNull(supervisorActor);
     }
 
+    /**
+     * Tests the creation of the ReadabilityCalculator actor in the YoutubeController.
+     * @author Mohnish Mirchandani
+     */
     @Test
     public void testReadabilityCalculatorActor() {
         ActorRef readabilityCalculatorActor = actorSystem.actorOf(ReadabilityCalculator.props(), "readibilityCalculatorActor");
         assertNotNull(readabilityCalculatorActor);
     }
 
+    /**
+     * Tests the creation of the SentimentAnalysisActor in the YoutubeController.
+     * @author Mohnish Mirchandani
+     */
     @Test
     public void testSentimentAnalysisActor() {
         ActorRef sentimentAnalysisActor = actorSystem.actorOf(SentimentAnalysisActor.props(), "sentimentAnalysisActor");
         assertNotNull(sentimentAnalysisActor);
     }
 
+    @Test
+    public void testChannelProfileActorCreation() {
+        // Arrange
+        ChannelProfileService mockChannelProfileService = mock(ChannelProfileService.class);
+
+        // Act
+        ActorRef channelProfileActor = actorSystem.actorOf(ChannelProfileActor.props(mockChannelProfileService), "channelProfileActor");
+
+        // Assert
+        assertNotNull(channelProfileActor);
+    }
+
+    /**
+     * Tests the getWordStats method of the YoutubeController.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testGetWordStats() {
         // Prepare test data

@@ -35,6 +35,10 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+/**
+ * Unit tests for the SearchActor class.
+ * @author Mohnish Mirchandani
+ */
 public class SearchActorTest {
         private static ActorSystem system;
 
@@ -50,18 +54,29 @@ public class SearchActorTest {
         @Mock
         private AsyncCacheApi mockCache;
 
+        /**
+         * Sets up the ActorSystem and initializes mocks before each test.
+         * @author Mohnish Mirchandani
+         */
         @Before
         public void setup() {
                 system = ActorSystem.create();
                 MockitoAnnotations.initMocks(this);
         }
 
+        /**
+         * Shuts down the ActorSystem after each test.
+         */
         @After
         public void teardown() {
                 TestKit.shutdownActorSystem(system);
                 system = null;
         }
 
+        /**
+         * Tests that the SearchActor does not perform a search when the user list is empty.
+         * @author Mohnish Mirchandani
+         */
         @Test
         public void testHandleSearchWithEmptyUserList() {
                 new TestKit(system) {
@@ -72,6 +87,8 @@ public class SearchActorTest {
                                 ActorRef mockReadabilityCalculatorActor = mock(ActorRef.class);
                                 ActorRef mockSentimentAnalysisActor = mock(ActorRef.class);
                                 ActorRef mockWordStatsActor = mock(ActorRef.class);
+                                ActorRef channelProfileActor = mock(ActorRef.class);
+                                
 
                                 // Create the SearchActor
                                 ActorRef searchActor = system.actorOf(SearchActor.props(
@@ -80,7 +97,8 @@ public class SearchActorTest {
                                                 mockCache,
                                                 mockReadabilityCalculatorActor,
                                                 mockSentimentAnalysisActor,
-                                                mockWordStatsActor), "searchActor");
+                                                mockWordStatsActor, 
+                                                channelProfileActor), "searchActor");
 
                                 // Create a test probe to receive messages
                                 TestKit probe = new TestKit(system);
@@ -94,6 +112,10 @@ public class SearchActorTest {
                 };
         }
 
+        /**
+         * Tests the complete workflow of the SearchActor, including interactions with other actors.
+         * @author Mohnish Mirchandani
+         */
         @Test
         public void testSearchActorWorkflow() {
                 System.out.println("SearchActorTest.testSearchActorWorkflow");
@@ -102,17 +124,22 @@ public class SearchActorTest {
                                 // Create test probes to simulate readability and sentiment actors
                                 TestKit readabilityProbe = new TestKit(system);
                                 TestKit sentimentProbe = new TestKit(system);
+                                TestKit channelProfileProbe = new TestKit(system);
 
                                 TestKit wordStatProbe = new TestKit(system);
 
                                 // Prepare mock YouTube search response
                                 ObjectNode searchResponseNode = Json.newObject();
                                 ObjectNode itemId = Json.newObject();
+                                ObjectNode snippet = Json.newObject();
+                                
                                 itemId.put("videoId", "test-video-id");
+                                snippet.put("channelId", "test-channel-id");
+                                
 
                                 ObjectNode searchItem = Json.newObject();
                                 searchItem.set("id", itemId);
-
+                                searchItem.set("snippet", snippet);
                                 searchResponseNode.putArray("items").add(searchItem);
 
                                 // Prepare mock video details response
@@ -144,7 +171,8 @@ public class SearchActorTest {
                                                 mockCache,
                                                 readabilityProbe.getRef(),
                                                 sentimentProbe.getRef(),
-                                                wordStatProbe.getRef()), "searchActor");
+                                                wordStatProbe.getRef(),
+                                                channelProfileProbe.getRef()), "searchActor");
 
                                 System.out.println(searchActor);
 
@@ -184,73 +212,4 @@ public class SearchActorTest {
                 };
         }
 
-        // public static final class RegisterMsg {
-
-        // private final String query;
-
-        // public RegisterMsg(String query) {
-        // this.query = query;
-        // }
-
-        // public String getQuery() {
-        // return query;
-        // }
-        // }
-
-        // public static class SearchResponse {
-        // final String query;
-        // final ObjectNode response;
-
-        // public SearchResponse(String query, ObjectNode response) {
-        // this.query = query;
-        // this.response = response;
-        // }
-        // }
-
-        // // Simulate message classes from other actors
-        // public static class ReadabilityCalculator {
-        // public static class initReadabilityCalculatorService {
-        // public final String videoId;
-        // public final String description;
-
-        // public initReadabilityCalculatorService(String videoId, String description) {
-        // this.videoId = videoId;
-        // this.description = description;
-        // }
-        // }
-
-        // public static class ReadabilityResults {
-        // public final String videoId;
-        // public final double gradeLevel;
-        // public final double readingScore;
-
-        // public ReadabilityResults(String videoId, double gradeLevel, double
-        // readingScore) {
-        // this.videoId = videoId;
-        // this.gradeLevel = gradeLevel;
-        // this.readingScore = readingScore;
-        // }
-        // }
-        // }
-
-        // public static class SentimentAnalysisActor {
-        // public static class initSentimentAnalyzerService {
-        // public final String query;
-        // public final java.util.List<String> descriptions;
-
-        // public initSentimentAnalyzerService(String query, java.util.List<String>
-        // descriptions) {
-        // this.query = query;
-        // this.descriptions = descriptions;
-        // }
-        // }
-
-        // public static class SentimentAnalysisResults {
-        // public final String sentiment;
-
-        // public SentimentAnalysisResults(String sentiment) {
-        // this.sentiment = sentiment;
-        // }
-        // }
-        // }
 }

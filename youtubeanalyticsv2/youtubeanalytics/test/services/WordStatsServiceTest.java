@@ -10,9 +10,19 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-
+/**
+ * Test class for WordStatsService.
+ * This class contains unit tests for the WordStatsService methods.
+ * @author Rolwyn Raju
+ */
 public class WordStatsServiceTest {
 
+
+    /**
+     * Tests the calculateWordStats method with a list of descriptions.
+     * Verifies that the word statistics are calculated correctly.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testCalculateWordStats() {
         List<String> descriptions = Arrays.asList(
@@ -29,6 +39,12 @@ public class WordStatsServiceTest {
         assertTrue(wordStats.containsKey("words"));
     }
 
+
+    /**
+     * Tests the calculateWordStats method with a list of descriptions.
+     * Verifies that the word statistics are calculated correctly.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testComputeWordStats() {
         List<String> descriptions = Arrays.asList(
@@ -45,6 +61,12 @@ public class WordStatsServiceTest {
         assertTrue(wordStats.containsKey("words"));
     }
 
+
+    /**
+     * Tests the calculateWordStats method with an empty list of descriptions.
+     * Verifies that the word statistics map is empty.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testEmptyDescriptions() {
         List<String> descriptions = Collections.emptyList();
@@ -54,6 +76,12 @@ public class WordStatsServiceTest {
         assertTrue(wordStats.isEmpty());
     }
 
+
+    /**
+     * Tests the calculateWordStats method with descriptions containing only stopwords.
+     * Verifies that the word statistics map is empty.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testDescriptionsWithOnlyStopwords() {
         List<String> descriptions = Arrays.asList(
@@ -65,6 +93,12 @@ public class WordStatsServiceTest {
         assertTrue(wordStats.isEmpty());
     }
 
+
+    /**
+     * Tests the calculateWordStats method with descriptions containing numbers.
+     * Verifies that the word statistics are calculated correctly and numbers are ignored.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testDescriptionsWithNumbers() {
         List<String> descriptions = Arrays.asList(
@@ -78,6 +112,12 @@ public class WordStatsServiceTest {
         assertTrue(!wordStats.containsKey("123"));
     }
 
+
+    /**
+     * Tests the calculateWordStats method with null descriptions.
+     * Verifies that a NullPointerException is thrown.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testNullDescriptions() {
         assertThrows(NullPointerException.class, () -> {
@@ -85,6 +125,12 @@ public class WordStatsServiceTest {
         });
     }
 
+
+    /**
+     * Tests the calculateWordStats method with descriptions containing special characters.
+     * Verifies that the word statistics are calculated correctly and special characters are ignored.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testDescriptionsWithSpecialCharacters() {
         List<String> descriptions = Arrays.asList(
@@ -98,6 +144,12 @@ public class WordStatsServiceTest {
         assertTrue(!wordStats.containsKey("!@#$%^&*()"));
     }
 
+
+    /**
+     * Tests the calculateWordStats method with descriptions containing mixed case words.
+     * Verifies that the word statistics are calculated correctly and case is ignored.
+     * @author Rolwyn Raju
+     */
     @Test
     public void testDescriptionsWithMixedCase() {
         List<String> descriptions = Arrays.asList(

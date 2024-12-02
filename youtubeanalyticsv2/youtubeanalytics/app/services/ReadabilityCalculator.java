@@ -7,11 +7,28 @@ import services.ReadabilityCalculator.ReadabilityResults;
 
 import java.util.List;
 
+/**
+ * This actor calculates the readability of a given text.
+ * @author Vatsal Dadia
+ */
+
 public class ReadabilityCalculator extends AbstractActor{
+
+    /**
+     * Props for creating the actor.
+     * @return Props for creating the actor.
+     * @author Vatsal Dadia
+     */
 
     public static Props props(){
         return Props.create(ReadabilityCalculator.class);
     }
+
+    /**
+     * Receives a message to initialize the readability calculator service.
+     * @return Receive message to initialize the readability calculator service.
+     * @author Vatsal Dadia
+     */
 
     @Override
     public Receive createReceive() {
@@ -30,6 +47,10 @@ public class ReadabilityCalculator extends AbstractActor{
                 .build();
     }
 
+    /**
+     * Message to initialize the readability calculator service.
+     * @author Vatsal Dadia
+     */
     public static class initReadabilityCalculatorService {
         public final String videoId;
         public final String description;
@@ -39,6 +60,11 @@ public class ReadabilityCalculator extends AbstractActor{
         }
     }
 
+
+    /**
+     * Message to send results of the readability calculation.
+     * @author Vatsal Dadia
+     */
     public static class ReadabilityResults {
         public final String videoId;
         public final double gradeLevel;
@@ -52,21 +78,6 @@ public class ReadabilityCalculator extends AbstractActor{
             System.out.println("Reading Score: " + readingScore);
         }
     }
-
-//    /**
-//     * Calculates the average grade level from a list of grades.
-//     *
-//     * @param grades List of grade levels.
-//     * @return The average grade level.
-//     * @author Vatsal Dadia
-//     */
-//    public static double calculateGradeAvg(List<Double> grades) {
-//        return grades
-//                .stream()
-//                .mapToDouble(Double::doubleValue)
-//                .average()
-//                .orElse(0.0);
-//    }
 
     /**
      * Calculates the Flesch-Kincaid grade level for a given description.

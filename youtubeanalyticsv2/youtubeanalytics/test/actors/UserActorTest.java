@@ -15,6 +15,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import play.libs.Json;
 
+/**
+ * Unit tests for the UserActor class.
+ * @author Mohnish Mirchandani
+ */
 public class UserActorTest {
 
 	private static ActorSystem system;
@@ -22,18 +26,30 @@ public class UserActorTest {
 	@Mock
 	private YoutubeController youtubeController;
 
+	/**
+	 * Sets up the ActorSystem and initializes mocks before each test.
+	 * @author Mohnish Mirchandani
+	 */
 	@Before
 	public void setup() {
 		system = ActorSystem.create();
 		MockitoAnnotations.openMocks(this); // Initialize mocks
 	}
 
+	/**
+	 * Shuts down the ActorSystem after each test.
+	 * @author Mohnish Mirchandani
+	 */
 	@After
 	public void teardown() {
 		TestKit.shutdownActorSystem(system);
 		system = null;
 	}
 
+	/**
+	 * Tests the search flow of the UserActor.
+	 * @author Mohnish Mirchandani
+	 */
 	@Test
 	public void testSearchFlow() {
 		new TestKit(system) {
@@ -94,6 +110,10 @@ public class UserActorTest {
 		};
 	}
 
+	/**
+	 * Tests the UserActor's handling of multiple search queries.
+	 * @author Mohnish Mirchandani
+	 */
 	@Test
 	public void testMultipleSearches() {
 		new TestKit(system) {
@@ -145,6 +165,10 @@ public class UserActorTest {
 		};
 	}
 
+	/**
+	 * Tests the UserActor's handling of invalid messages.
+	 * @author Mohnish Mirchandani
+	 */
 	@Test
 	public void testInvalidMessage() {
 		new TestKit(system) {

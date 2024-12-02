@@ -113,6 +113,8 @@ public class SupervisorActor extends AbstractActor {
                 Duration.create(2, TimeUnit.SECONDS),
                 DeciderBuilder
                         .match(Exception.class, e -> SupervisorStrategy.restart())
+                        .match(Terminated.class, e -> SupervisorStrategy.restart())
+                        .match(RuntimeException.class, e -> SupervisorStrategy.restart())
                         .build()
         );
     }

@@ -31,6 +31,10 @@ import services.ReadabilityCalculator;
 
 import static actors.WordStatsActor.wordStatsMap;
 
+/**
+ * Actor responsible for handling YouTube search queries and processing video data.
+ * @author Mohnish Mirchandani, Vatsal Dadia
+ */
 public class SearchActor extends AbstractActorWithTimers {
 
 	private final List<ActorRef> userActorList;
@@ -42,18 +46,31 @@ public class SearchActor extends AbstractActorWithTimers {
 	private ActorRef readabilityCalculatorActor;
 	private ActorRef sentimentAnalysisActor;
 	private ActorRef wordStatsActor;
+	private ActorRef channelProfileActor;
 	private static final String YOUTUBE_API_KEY =
 		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
+	/**
+	 * Constructor for SearchActor.
+	 *
+	 * @param ws WSClient for making HTTP requests.
+	 * @param query The search query.
+	 * @param cache AsyncCacheApi for caching responses.
+	 * @param readabilityCalculatorActor ActorRef for readability calculations.
+	 * @param sentimentAnalysisActor ActorRef for sentiment analysis.
+	 * @param wordStatsActor ActorRef for word statistics.
+	 * @author Mohnish Mirchandani, Vatsal Dadia
+	 */
 	public SearchActor(
 		WSClient ws,
 		String query,
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
 		ActorRef sentimentAnalysisActor,
-		ActorRef wordStatsActor
+		ActorRef wordStatsActor,
+		ActorRef channelProfileActor
 	) {
 		this.ws = ws;
 		this.query = query;
@@ -64,15 +81,29 @@ public class SearchActor extends AbstractActorWithTimers {
 		this.sentimentAnalysisActor = sentimentAnalysisActor;
 		this.wordStatsActor = wordStatsActor;
 		this.searchSentiment = ":-|||||";
+		this.channelProfileActor = channelProfileActor;
 	}
 
+	/**
+	 * Creates Props for an actor of this type.
+	 *
+	 * @param ws WSClient for making HTTP requests.
+	 * @param query The search query.
+	 * @param cache AsyncCacheApi for caching responses.
+	 * @param readabilityCalculatorActor ActorRef for readability calculations.
+	 * @param sentimentAnalysisActor ActorRef for sentiment analysis.
+	 * @param wordStatsActor ActorRef for word statistics.
+	 * @return A Props for creating this actor.
+	 * @author Mohnish Mirchandani, @author Vatsal Dadia
+	 */
 	public static Props props(
 		WSClient ws,
 		String query,
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
 		ActorRef sentimentAnalysisActor,
-		ActorRef wordStatsActor
+		ActorRef wordStatsActor,
+		ActorRef channelProfileActor
 	) {
 		return Props.create(
 			SearchActor.class,
@@ -81,7 +112,8 @@ public class SearchActor extends AbstractActorWithTimers {
 			cache,
 			readabilityCalculatorActor,
 			sentimentAnalysisActor,
-			wordStatsActor
+			wordStatsActor,
+				channelProfileActor
 		);
 	}
 
@@ -147,6 +179,9 @@ public class SearchActor extends AbstractActorWithTimers {
 					JsonNode wordStats = message.wordStats;
 					wordStatsMap.put(message.videoId, wordStats);
 				})
+				.match(ChannelProfileRequest.class, message -> {
+					channelProfileActor.tell(message.channelId, getSender());
+				})
 			.build();
 	}
 
@@ -154,27 +189,53 @@ public class SearchActor extends AbstractActorWithTimers {
 	//
 	//	}
 
+	/**
+	 * Message class for periodic timer ticks.
+	 */
 	public static final class Tick {
 
 		private final String query;
 
+		/**
+		 * Constructor for Tick.
+		 *
+		 * @param query The search query.
+		 */
 		public Tick(String query) {
 			this.query = query;
 		}
 
+		/**
+		 * Gets the search query.
+		 *
+		 * @return The search query.
+		 */
 		public String getQuery() {
 			return query;
 		}
 	}
 
+	/**
+	 * Message class for registering a user actor.
+	 */
 	public static final class RegisterMsg {
 
 		private final String query;
 
+		/**
+		 * Constructor for RegisterMsg.
+		 *
+		 * @param query The search query.
+		 */
 		public RegisterMsg(String query) {
 			this.query = query;
 		}
 
+		/**
+		 * Gets the search query.
+		 *
+		 * @return The search query.
+		 */
 		public String getQuery() {
 			return query;
 		}
@@ -185,13 +246,27 @@ public class SearchActor extends AbstractActorWithTimers {
 		final String query;
 		final ObjectNode response;
 
+		/**
+		 * Message class for search responses.
+		 */
 		public SearchResponse(String query, ObjectNode response) {
 			this.query = query;
 			this.response = response;
 		}
 	}
 
+	public static final class ChannelProfileRequest {
+		public final String channelId;
+
+		public ChannelProfileRequest(String channelId) {
+			this.channelId = channelId;
+		}
+	}
 	
+	/**
+	 * Handles the search operation by making a request to the YouTube API and processing the results.
+	 * @author Vatsal Dadia, Mohnish Mirchandani
+	 */
 	private void handleSearch() {
 		if (!userActorList.isEmpty()) {
 			ws
@@ -225,6 +300,10 @@ public class SearchActor extends AbstractActorWithTimers {
 							.asText();
 						videoNodes.put(videoId, videoNode);
 
+						String channelId = videoNode.get("snippet").get("channelId").asText();
+						videoNode.put("channelId", channelId);
+						System.out.println("Captured Channel ID: " + channelId);
+
 						CompletionStage<ObjectNode> future = getVideo(
 							videoId
 						).thenCompose(response -> {
@@ -257,6 +336,7 @@ public class SearchActor extends AbstractActorWithTimers {
 									"fleschReadingScore",
 									String.format("%.2f", results.readingScore)
 								);
+								videoNode.put("channelId", channelId);
 								return videoNode;
 							});
 						});
@@ -354,6 +434,13 @@ public class SearchActor extends AbstractActorWithTimers {
 		}
 	}
 
+	/**
+	 * Makes a request to the YouTube API to get video details.
+	 *
+	 * @param video_id The ID of the video.
+	 * @return A CompletionStage containing the WSResponse.
+	 * @author Vatsal Dadia
+	 */
 	public CompletionStage<WSResponse> getVideo(String video_id) {
 		//		return cache.getOrElseUpdate(
 		//				video_id,
