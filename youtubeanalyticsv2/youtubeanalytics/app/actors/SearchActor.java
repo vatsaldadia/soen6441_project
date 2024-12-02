@@ -1,5 +1,6 @@
 package actors;
 
+import actors.SearchActor.SearchResponse;
 import actors.SentimentAnalysisActor;
 import actors.WordStatsActor;
 import akka.actor.AbstractActorWithTimers;
@@ -48,7 +49,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	private ActorRef wordStatsActor;
 	private ActorRef channelProfileActor;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
+		"AIzaSyA1mnyPEMB5J33g-zOOPSbJPzWq1d4Qczs";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 
@@ -272,7 +273,7 @@ public class SearchActor extends AbstractActorWithTimers {
 			ws
 				.url(YOUTUBE_URL + "/search")
 				.addQueryParameter("part", "snippet")
-				.addQueryParameter("maxResults", "10")
+				.addQueryParameter("maxResults", "50")
 				.addQueryParameter("q", query)
 				.addQueryParameter("type", "video")
 				.addQueryParameter("order", "date")
@@ -394,7 +395,16 @@ public class SearchActor extends AbstractActorWithTimers {
 							String.format("%.2f", scoreAvg)
 						);
 						System.out.println("Line3.3");
-						modifiedResponse.set("items", modifiedItems);
+
+						ArrayNode tempModifiedItems =
+						JsonNodeFactory.instance.arrayNode();
+
+						StreamSupport.stream(modifiedItems.spliterator(), false)
+							.limit(10)
+							.forEach(val -> {
+								tempModifiedItems.add(val);
+							});
+						modifiedResponse.set("items", tempModifiedItems);
 						modifiedResponse.put("query", query);
 
 						System.out.println("Line4. Ask sentiment analysis actor");
