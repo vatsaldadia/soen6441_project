@@ -130,11 +130,15 @@ public class SearchActorTest {
                                 // Prepare mock YouTube search response
                                 ObjectNode searchResponseNode = Json.newObject();
                                 ObjectNode itemId = Json.newObject();
+                                ObjectNode snippet = Json.newObject();
+                                
                                 itemId.put("videoId", "test-video-id");
+                                snippet.put("channelId", "test-channel-id");
+                                
 
                                 ObjectNode searchItem = Json.newObject();
                                 searchItem.set("id", itemId);
-
+                                searchItem.set("snippet", snippet);
                                 searchResponseNode.putArray("items").add(searchItem);
 
                                 // Prepare mock video details response
