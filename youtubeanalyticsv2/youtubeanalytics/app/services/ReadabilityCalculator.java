@@ -2,6 +2,8 @@ package services;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
+import messages.Messages.TerminateActor;
+import services.ReadabilityCalculator.ReadabilityResults;
 
 import java.util.List;
 
@@ -32,11 +34,23 @@ public class ReadabilityCalculator extends AbstractActor{
     public Receive createReceive() {
         return receiveBuilder()
                 .match(initReadabilityCalculatorService.class, message -> {
+                    try{
+                        System.out.println("Readibility init");
+                        double gradeLevel = calculateFleschKincaidGradeLevel(message.description);
+                        double readingScore = calculateFleschReadingScore(message.description);
+                        getSender().tell(new ReadabilityResults(message.videoId, gradeLevel, readingScore), getSelf());
+                    } catch (Exception e){
+                        throw new RuntimeException("Readibility Analysis Failed");
+                    }
 
-                    double gradeLevel = calculateFleschKincaidGradeLevel(message.description);
-                    double readingScore = calculateFleschReadingScore(message.description);
-                    System.out.println("Readibility init");
-                    getSender().tell(new ReadabilityResults(message.videoId, gradeLevel, readingScore), getSelf());
+                    // double gradeLevel = calculateFleschKincaidGradeLevel(message.description);
+                    // double readingScore = calculateFleschReadingScore(message.description);
+                    // System.out.println("Readibility init");
+                    // getSender().tell(new ReadabilityResults(message.videoId, gradeLevel, readingScore), getSelf());
+                })
+                .match(TerminateActor.class, message -> {
+                    System.out.println("Terminating ReadabilityActor");
+                    getContext().stop(getSelf());
                 })
                 .build();
     }
@@ -46,6 +60,7 @@ public class ReadabilityCalculator extends AbstractActor{
      * @author Vatsal Dadia
      */
     public static class initReadabilityCalculatorService {
+        
         public final String videoId;
         public final String description;
         public initReadabilityCalculatorService(String videoId, String message){

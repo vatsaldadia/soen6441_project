@@ -1,0 +1,57 @@
+@(channelDetails: com.fasterxml.jackson.databind.JsonNode, latestVideos: com.fasterxml.jackson.databind.JsonNode)
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .full-description {
+            white-space: normal;    /* Allows text to wrap normally */
+            word-wrap: break-word;  /* Breaks long words if necessary */
+        }
+        .video-item {
+            margin: 20px;
+            padding: 15px;
+            border: 2px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Channel Thumbnail -->
+<img src="@channelDetails.get("items").get(0).get("snippet").get("thumbnails").get("high").get("url").asText()" alt="Channel Thumbnail" style="width:200px;height:auto;" /> <br>
+
+<h3>
+    <p>Channel Profile:
+        <a href="https://www.youtube.com/channel/@channelDetails.get("items").get(0).get("id").asText()" target="_blank">
+        @channelDetails.get("items").get(0).get("snippet").get("title").asText()
+        </a>
+    </p>
+</h3>
+
+
+<!-- Channel Details -->
+<b>Description:</b> @channelDetails.get("items").get(0).get("snippet").get("description").asText() <br>
+<b>Subscribers:</b> @channelDetails.get("items").get(0).get("statistics").get("subscriberCount").asText() <br>
+<b>Views:</b> @channelDetails.get("items").get(0).get("statistics").get("viewCount").asText() <br>
+<b>Videos:</b> @channelDetails.get("items").get(0).get("statistics").get("videoCount").asText() <br>
+
+<!-- Latest Videos Section -->
+<h3>Latest 10 Videos</h3>
+
+@if(latestVideos.get("items").size() > 0) {
+@for(video <- latestVideos.get("items").elements()) {
+<div class="video-item">
+    <img src="@video.get("snippet").get("thumbnails").get("default").get("url").asText()" alt="Thumbnail" /> <br>
+    <b>Title:</b>
+    <a href="https://www.youtube.com/watch?v=@video.get("id").get("videoId").asText()" target="_blank">
+    @video.get("snippet").get("title").asText()
+    </a><br>
+    <b>Description:</b> @video.get("snippet").get("description").asText() <br>
+</div>
+}
+} else {
+<p>No recent videos available.</p>
+}
+</body>
+</html>

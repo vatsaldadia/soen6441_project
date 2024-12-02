@@ -34,15 +34,20 @@ public class SentimentAnalysisActor extends AbstractActor {
 	public Receive createReceive() {
 		return receiveBuilder()
 			.match(initSentimentAnalyzerService.class, message -> {
+				try{
+
 				String sentiment = SentimentAnalyzer.analyzeSentiment(
 					message.descriptions
-				);
-				// System.out.println(sentiment);
-				getSender()
+					);
+					// System.out.println(sentiment);
+					getSender()
 					.tell(
 						new SentimentAnalysisResults(message.query, sentiment),
 						getSelf()
-					);
+						);
+					} catch (Exception e){
+						throw new RuntimeException("Sentiment Analysis Failed");
+					}
 			})
 			.match(TerminateActor.class, message -> {
                     System.out.println("Terminating SearchActor");

@@ -46,6 +46,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	private ActorRef readabilityCalculatorActor;
 	private ActorRef sentimentAnalysisActor;
 	private ActorRef wordStatsActor;
+	private ActorRef channelProfileActor;
 	private static final String YOUTUBE_API_KEY =
 		"AIzaSyBn3hOC9y7PsDrQ62Xuj5M_P83ASq6GZRY";
 	private static final String YOUTUBE_URL =
@@ -68,7 +69,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
 		ActorRef sentimentAnalysisActor,
-		ActorRef wordStatsActor
+		ActorRef wordStatsActor,
+		ActorRef channelProfileActor
 	) {
 		this.ws = ws;
 		this.query = query;
@@ -79,6 +81,7 @@ public class SearchActor extends AbstractActorWithTimers {
 		this.sentimentAnalysisActor = sentimentAnalysisActor;
 		this.wordStatsActor = wordStatsActor;
 		this.searchSentiment = ":-|||||";
+		this.channelProfileActor = channelProfileActor;
 	}
 
 	/**
@@ -99,7 +102,8 @@ public class SearchActor extends AbstractActorWithTimers {
 		AsyncCacheApi cache,
 		ActorRef readabilityCalculatorActor,
 		ActorRef sentimentAnalysisActor,
-		ActorRef wordStatsActor
+		ActorRef wordStatsActor,
+		ActorRef channelProfileActor
 	) {
 		return Props.create(
 			SearchActor.class,
@@ -108,7 +112,8 @@ public class SearchActor extends AbstractActorWithTimers {
 			cache,
 			readabilityCalculatorActor,
 			sentimentAnalysisActor,
-			wordStatsActor
+			wordStatsActor,
+				channelProfileActor
 		);
 	}
 
@@ -125,7 +130,7 @@ public class SearchActor extends AbstractActorWithTimers {
 			.startPeriodicTimer(
 				"Timer",
 				new Tick(this.query),
-				Duration.create(10, TimeUnit.MINUTES)
+				Duration.create(1, TimeUnit.MINUTES)
 			);
 	}
 
@@ -173,6 +178,9 @@ public class SearchActor extends AbstractActorWithTimers {
 				.match(WordStatsActor.WordStatsResults.class, message -> {
 					JsonNode wordStats = message.wordStats;
 					wordStatsMap.put(message.videoId, wordStats);
+				})
+				.match(ChannelProfileRequest.class, message -> {
+					channelProfileActor.tell(message.channelId, getSender());
 				})
 			.build();
 	}
@@ -247,6 +255,14 @@ public class SearchActor extends AbstractActorWithTimers {
 		}
 	}
 
+	public static final class ChannelProfileRequest {
+		public final String channelId;
+
+		public ChannelProfileRequest(String channelId) {
+			this.channelId = channelId;
+		}
+	}
+	
 	/**
 	 * Handles the search operation by making a request to the YouTube API and processing the results.
 	 * @author Vatsal Dadia, Mohnish Mirchandani
@@ -256,7 +272,7 @@ public class SearchActor extends AbstractActorWithTimers {
 			ws
 				.url(YOUTUBE_URL + "/search")
 				.addQueryParameter("part", "snippet")
-				.addQueryParameter("maxResults", "1")
+				.addQueryParameter("maxResults", "10")
 				.addQueryParameter("q", query)
 				.addQueryParameter("type", "video")
 				.addQueryParameter("order", "date")
@@ -283,6 +299,10 @@ public class SearchActor extends AbstractActorWithTimers {
 							.get("videoId")
 							.asText();
 						videoNodes.put(videoId, videoNode);
+
+						String channelId = videoNode.get("snippet").get("channelId").asText();
+						videoNode.put("channelId", channelId);
+						System.out.println("Captured Channel ID: " + channelId);
 
 						CompletionStage<ObjectNode> future = getVideo(
 							videoId
@@ -316,6 +336,7 @@ public class SearchActor extends AbstractActorWithTimers {
 									"fleschReadingScore",
 									String.format("%.2f", results.readingScore)
 								);
+								videoNode.put("channelId", channelId);
 								return videoNode;
 							});
 						});
@@ -411,6 +432,7 @@ public class SearchActor extends AbstractActorWithTimers {
 					});
 				});
 		}
+		
 	}
 
 	/**
