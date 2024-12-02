@@ -130,7 +130,7 @@ public class SearchActor extends AbstractActorWithTimers {
 			.startPeriodicTimer(
 				"Timer",
 				new Tick(this.query),
-				Duration.create(10, TimeUnit.MINUTES)
+				Duration.create(1, TimeUnit.MINUTES)
 			);
 	}
 
