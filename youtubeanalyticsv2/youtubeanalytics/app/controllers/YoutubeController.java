@@ -14,6 +14,7 @@ import akka.pattern.Patterns;
 import akka.stream.Materializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import services.ChannelProfileService;
@@ -113,17 +114,18 @@ public class YoutubeController extends Controller {
 						java.time.Duration.ofSeconds(20)
 				)
 				.thenApply(response -> {
-					ObjectNode results = (ObjectNode) response;
+					ArrayNode results = (ArrayNode) response;
 
-					JsonNode channelDetails = results.get("videoId");
+					String name = results.get(0).get("videoId").toString();
+					/*JsonNode channelDetails = results.get("videoId");
 					JsonNode latestVideos = results.get("title");
 					JsonNode channelTitle = results.get("channelTitle");
 					JsonNode url = results.get("thumbnailUrl");
 
 					System.out.println("LatestVideo" + latestVideos);
 					System.out.println("channelDetails"+ channelDetails);
-					System.out.println("Response"+ response);
-					return ok(views.html.tagProfile.render(channelDetails, latestVideos, channelTitle, url));
+					System.out.println("Response"+ response);*/
+					return ok(views.html.tagProfile.render(name, results.toString()));
 				});
 		//return ok(views.html.search.render());
 	}

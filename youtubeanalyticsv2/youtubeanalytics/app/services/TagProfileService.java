@@ -19,7 +19,7 @@ import java.util.concurrent.CompletionStage;
 
 public class TagProfileService {
     private final WSClient ws;
-    private final String YOUTUBE_API_KEY = "AIzaSyBIPw9IFVqkuCaXFx5usHyJHORujcIvex8"; // Replace with your actual YouTube API key
+    private final String YOUTUBE_API_KEY = "AIzaSyDjCa9mW1hzNmgKkhOwVkJuqIPuRtN94LQ"; // Replace with your actual YouTube API key
     private static final String YOUTUBE_URL =
             "https://www.googleapis.com/youtube/v3";
     public TagProfileService(WSClient ws) {

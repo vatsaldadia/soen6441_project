@@ -1,0 +1,30 @@
+@(tag: String, videoList: String)
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Videos Tagged with "@tag"</title>
+  <style>
+    .video-item {
+        margin: 20px;
+        padding: 15px;
+        border: 2px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+<h3>Videos tagged with "@tag"</h3>
+
+@for(video <- play.libs.Json.parse(videoList).elements()) {
+<div class="video-item">
+  <img src="@video.get("thumbnailUrl").asText()" alt="Thumbnail" />
+  <br>
+  <b>Title:</b> <a href="https://www.youtube.com/watch?v=@video.get("videoId").asText()" target="_blank">@video.get("title").asText()</a>
+  <br>
+  <b>Description:</b> @video.get("description").asText()
+</div>
+}
+
+</body>
+</html>

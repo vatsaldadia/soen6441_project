@@ -44,27 +44,31 @@ public class TagProfileActor extends AbstractActor {
                         JsonNode items = latestTag.get("items");
                         ObjectNode response = JsonNodeFactory.instance.objectNode();
 
-                        if (items != null && items.isArray() && items.size() > 0) {
-                            JsonNode firstItem = items.get(0);
-
-                            // Extract video details
-                            String videoId = firstItem.at("/id/videoId").asText();
-                            String title = firstItem.at("/snippet/title").asText();
-                            String channelTitle = firstItem.at("/snippet/channelTitle").asText();
-                            String thumbnailUrl = firstItem.at("/snippet/thumbnails/high/url").asText();
-
-                            // Construct response ObjectNode
-                            response.put("videoId", videoId);
-                            response.put("title", title);
-                            response.put("channelTitle", channelTitle);
-                            response.put("thumbnailUrl", thumbnailUrl);
-                        } else {
-                            response.put("error", "No items found in the response.");
+                        for (JsonNode item : latestTag.get("items")) {
+                            ObjectNode videoNode =
+                                    JsonNodeFactory.instance.objectNode();
+                            String videoId = item.get("id").get("videoId").asText();
+                            JsonNode snippet = item.get("snippet");
+                            videoNode.put("videoId", videoId);
+                            videoNode.put("title", snippet.get("title").asText());
+                            videoNode.put(
+                                    "description",
+                                    snippet.get("description").asText()
+                            );
+                            videoNode.put(
+                                    "thumbnailUrl",
+                                    snippet
+                                            .get("thumbnails")
+                                            .get("default")
+                                            .get("url")
+                                            .asText()
+                            );
+                            videoList.add(videoNode);
                         }
 
                         // Send the ObjectNode as a response
-                        sender.tell(response, getSelf());
-                        return response;
+                        sender.tell(videoList, getSelf());
+                        return videoList;
                     });
 //                                .thenAccept(results -> getSender().tell(results, getSelf()));
                 })
