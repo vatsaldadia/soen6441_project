@@ -49,7 +49,7 @@ public class SearchActor extends AbstractActorWithTimers {
 	private ActorRef wordStatsActor;
 	private ActorRef channelProfileActor;
 	private static final String YOUTUBE_API_KEY =
-		"AIzaSyA1mnyPEMB5J33g-zOOPSbJPzWq1d4Qczs";
+		"AIzaSyBIPw9IFVqkuCaXFx5usHyJHORujcIvex8";
 	private static final String YOUTUBE_URL =
 		"https://www.googleapis.com/youtube/v3";
 

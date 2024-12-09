@@ -29,6 +29,7 @@ import play.libs.streams.ActorFlow;
 import play.libs.ws.WSClient;
 import play.mvc.*;
 import services.ReadabilityCalculator;
+import services.TagProfileService;
 /**
  * This controller contains an action to handle HTTP requests to the application's home page.
  * @author Vatsal Dadia
@@ -44,6 +45,7 @@ public class YoutubeController extends Controller {
 	private final ActorRef supervisorActor;
 	private final ActorRef channelProfileActor;
 	private final ActorRef wordStatsActor;
+	private final ActorRef tagProfileActor;
 	//	private final ActorRef helperActor;
 
 	private Map<String, ActorRef> searchActors;
@@ -82,16 +84,46 @@ public class YoutubeController extends Controller {
 				WordStatsActor.props()
 		);
 
+		TagProfileService tagProfileService = new TagProfileService(ws);
+		this.tagProfileActor = system.actorOf(
+				TagProfileActor.props(tagProfileService)
+		);
 
 		supervisorActor.tell(new SupervisorActor.AddActor(readabilityCalculatorActor), ActorRef.noSender());
         supervisorActor.tell(new SupervisorActor.AddActor(sentimentAnalysisActor), ActorRef.noSender());
         supervisorActor.tell(new SupervisorActor.AddActor(wordStatsActor), ActorRef.noSender());
+		//supervisorActor.tell(new SupervisorActor.AddActor(tagProfileActor), ActorRef.noSender());
         // supervisorActor.tell(new SupervisorActor.AddActor(helperActor), ActorRef.noSender());
 
 		ChannelProfileService channelProfileService = new ChannelProfileService(ws);
 		this.channelProfileActor = system.actorOf(ChannelProfileActor.props(channelProfileService));
 		//		this.helperActor = system.actorOf(HelperActor.props(system, ws));
 		//		system.actorOf(Props.create(TestActor.class));
+	}
+
+	public CompletionStage<Result> getTagProfile(String tagId){
+		String decodedChannelId = URLDecoder.decode(tagId, StandardCharsets.UTF_8);
+		//new TagProfileActor.InitTagProfileService(decodedChannelId);
+		System.out.println("Decoded Channel ID: " + decodedChannelId);
+
+		// Send the channel ID to ChannelProfileActor
+		return Patterns.ask(
+						tagProfileActor,
+						new TagProfileActor.InitTagProfileService(decodedChannelId),
+						java.time.Duration.ofSeconds(10)
+				)
+				.thenApply(response -> {
+					ObjectNode results = (ObjectNode) response;
+
+					JsonNode channelDetails = results.get("channelDetails");
+					JsonNode latestVideos = results.get("latestVideos");
+
+					System.out.println("LatestVideo" + latestVideos);
+					System.out.println("channelDetails"+ channelDetails);
+					System.out.println("Response"+ response);
+					return ok(views.html.channelprofile.render(channelDetails, latestVideos));
+				});
+		//return ok(views.html.search.render());
 	}
 
 	/**
