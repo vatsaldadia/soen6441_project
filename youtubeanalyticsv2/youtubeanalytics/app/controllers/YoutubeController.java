@@ -110,18 +110,20 @@ public class YoutubeController extends Controller {
 		return Patterns.ask(
 						tagProfileActor,
 						new TagProfileActor.InitTagProfileService(decodedChannelId),
-						java.time.Duration.ofSeconds(10)
+						java.time.Duration.ofSeconds(20)
 				)
 				.thenApply(response -> {
 					ObjectNode results = (ObjectNode) response;
 
-					JsonNode channelDetails = results.get("channelDetails");
-					JsonNode latestVideos = results.get("latestVideos");
+					JsonNode channelDetails = results.get("videoId");
+					JsonNode latestVideos = results.get("title");
+					JsonNode channelTitle = results.get("channelTitle");
+					JsonNode url = results.get("thumbnailUrl");
 
 					System.out.println("LatestVideo" + latestVideos);
 					System.out.println("channelDetails"+ channelDetails);
 					System.out.println("Response"+ response);
-					return ok(views.html.channelprofile.render(channelDetails, latestVideos));
+					return ok(views.html.tagProfile.render(channelDetails, latestVideos, channelTitle, url));
 				});
 		//return ok(views.html.search.render());
 	}

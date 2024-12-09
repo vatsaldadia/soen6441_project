@@ -6,6 +6,7 @@ import akka.actor.Props;
 import akka.actor.typed.javadsl.Receive;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import services.TagProfileService;
@@ -37,7 +38,7 @@ public class TagProfileActor extends AbstractActor {
 
                     ActorRef sender = getSender();
 
-
+                    ArrayNode videoList = JsonNodeFactory.instance.arrayNode();
                     latestTagFuture.thenApply(latestTag -> {
                         // Extract data from the JsonNode
                         JsonNode items = latestTag.get("items");
